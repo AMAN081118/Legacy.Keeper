@@ -1,0 +1,621 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export interface Database {
+  public: {
+    Tables: {
+      users: {
+        Row: {
+          id: string
+          name: string
+          email: string
+          phone: string | null
+          dob: string | null
+          gender: string | null
+          government_id_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          name: string
+          email: string
+          phone?: string | null
+          dob?: string | null
+          gender?: string | null
+          government_id_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          email?: string
+          phone?: string | null
+          dob?: string | null
+          gender?: string | null
+          government_id_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      requests: {
+        Row: {
+          id: string
+          title: string
+          user_id: string
+          recipient_id: string | null
+          amount: number
+          comment: string | null
+          status: "pending" | "approved" | "rejected"
+          transaction_type: "Debt" | "Investment" | "Loan" | null
+          details: string | null
+          attachment_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          user_id: string
+          recipient_id?: string | null
+          amount: number
+          comment?: string | null
+          status?: "pending" | "approved" | "rejected"
+          transaction_type?: "Debt" | "Investment" | "Loan" | null
+          details?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          user_id?: string
+          recipient_id?: string | null
+          amount?: number
+          comment?: string | null
+          status?: "pending" | "approved" | "rejected"
+          transaction_type?: "Debt" | "Investment" | "Loan" | null
+          details?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      transactions: {
+        Row: {
+          id: string
+          name: string
+          user_id: string
+          amount: number
+          transaction_type: "Paid" | "Received"
+          payment_mode: string | null
+          date: string
+          description: string | null
+          attachment_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          user_id: string
+          amount: number
+          transaction_type: "Paid" | "Received"
+          payment_mode?: string | null
+          date?: string
+          description?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          user_id?: string
+          amount?: number
+          transaction_type?: "Paid" | "Received"
+          payment_mode?: string | null
+          date?: string
+          description?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      debts_loans: {
+        Row: {
+          id: string
+          user_id: string
+          person: string
+          amount: number
+          interest: number | null
+          amount_due: number | null
+          start_date: string
+          due_date: string | null
+          payment_mode: string | null
+          security: string | null
+          purpose: string | null
+          attachment_url: string | null
+          transaction_type: "Given" | "Received"
+          status: "Active" | "Completed" | "Defaulted"
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          person: string
+          amount: number
+          interest?: number | null
+          amount_due?: number | null
+          start_date: string
+          due_date?: string | null
+          payment_mode?: string | null
+          security?: string | null
+          purpose?: string | null
+          attachment_url?: string | null
+          transaction_type: "Given" | "Received"
+          status?: "Active" | "Completed" | "Defaulted"
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          person?: string
+          amount?: number
+          interest?: number | null
+          amount_due?: number | null
+          start_date?: string
+          due_date?: string | null
+          payment_mode?: string | null
+          security?: string | null
+          purpose?: string | null
+          attachment_url?: string | null
+          transaction_type?: "Given" | "Received"
+          status?: "Active" | "Completed" | "Defaulted"
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      deposits_investments: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          amount: number
+          investment_type: "Bank" | "Gold" | "Silver" | "Shares" | "Bond" | "Property" | "DigitalAsset" | "Other"
+          description: string | null
+          paid_to: string | null
+          date: string
+          maturity_date: string | null
+          interest_rate: number | null
+          expected_returns: number | null
+          attachment_url: string | null
+          status: "Active" | "Matured" | "Withdrawn"
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          amount: number
+          investment_type: "Bank" | "Gold" | "Silver" | "Shares" | "Bond" | "Property" | "DigitalAsset" | "Other"
+          description?: string | null
+          paid_to?: string | null
+          date: string
+          maturity_date?: string | null
+          interest_rate?: number | null
+          expected_returns?: number | null
+          attachment_url?: string | null
+          status?: "Active" | "Matured" | "Withdrawn"
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          amount?: number
+          investment_type?: "Bank" | "Gold" | "Silver" | "Shares" | "Bond" | "Property" | "DigitalAsset" | "Other"
+          description?: string | null
+          paid_to?: string | null
+          date?: string
+          maturity_date?: string | null
+          interest_rate?: number | null
+          expected_returns?: number | null
+          attachment_url?: string | null
+          status?: "Active" | "Matured" | "Withdrawn"
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      insurance: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          amount: number
+          insurance_type: "Life" | "Health" | "Term" | "Auto" | "Property" | "Content" | "Other"
+          description: string | null
+          date: string
+          coverage_period: string | null
+          attachment_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          amount: number
+          insurance_type: "Life" | "Health" | "Term" | "Auto" | "Property" | "Content" | "Other"
+          description?: string | null
+          date: string
+          coverage_period?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          amount?: number
+          insurance_type?: "Life" | "Health" | "Term" | "Auto" | "Property" | "Content" | "Other"
+          description?: string | null
+          date?: string
+          coverage_period?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      business_plans: {
+        Row: {
+          id: string
+          user_id: string
+          business_name: string
+          business_type: string
+          ownership_percentage: string | null
+          investment_amount: number
+          succession_plans: string | null
+          attachment_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          business_name: string
+          business_type: string
+          ownership_percentage?: string | null
+          investment_amount: number
+          succession_plans?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          business_name?: string
+          business_type?: string
+          ownership_percentage?: string | null
+          investment_amount?: number
+          succession_plans?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      health_records: {
+        Row: {
+          id: string
+          user_id: string
+          member_name: string
+          dob: string | null
+          gender: string | null
+          blood_group: string | null
+          contact_number: string | null
+          medical_conditions: string | null
+          allergies: string | null
+          medications: string | null
+          emergency_contact: string | null
+          attachment_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          member_name: string
+          dob?: string | null
+          gender?: string | null
+          blood_group?: string | null
+          contact_number?: string | null
+          medical_conditions?: string | null
+          allergies?: string | null
+          medications?: string | null
+          emergency_contact?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          member_name?: string
+          dob?: string | null
+          gender?: string | null
+          blood_group?: string | null
+          contact_number?: string | null
+          medical_conditions?: string | null
+          allergies?: string | null
+          medications?: string | null
+          emergency_contact?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      health_conditions: {
+        Row: {
+          id: string
+          health_record_id: string
+          condition_name: string
+          doctor_name: string | null
+          visit_date: string | null
+          description: string | null
+          attachment_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          health_record_id: string
+          condition_name: string
+          doctor_name?: string | null
+          visit_date?: string | null
+          description?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          health_record_id?: string
+          condition_name?: string
+          doctor_name?: string | null
+          visit_date?: string | null
+          description?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+       family_members: {
+        Row: {
+          id: string
+          user_id: string
+          member_name: string
+          contact_number: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          member_name: string
+          contact_number?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          member_name?: string
+          contact_number?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      family_documents: {
+        Row: {
+          id: string
+          family_member_id: string
+          document_title: string
+          document_category: string | null
+          document_date: string | null
+          description: string | null
+          attachment_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          family_member_id: string
+          document_title: string
+          document_category?: string | null
+          document_date?: string | null
+          description?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          family_member_id?: string
+          document_title?: string
+          document_category?: string | null
+          document_date?: string | null
+          description?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      reminders: {
+        Row: {
+          id: string
+          user_id: string
+          reminder_name: string
+          category: string | null
+          start_date: string
+          frequency: number | null
+          notes: string | null
+          attachment_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          reminder_name: string
+          category?: string | null
+          start_date: string
+          frequency?: number | null
+          notes?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          reminder_name?: string
+          category?: string | null
+          start_date?: string
+          frequency?: number | null
+          notes?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      digital_accounts: {
+        Row: {
+          id: string
+          user_id: string
+          account_name: string
+          account_id_no: string | null
+          password_phone: string | null
+          login_contact: string | null
+          description: string | null
+          government_id_url: string | null
+          date: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          account_name: string
+          account_id_no?: string | null
+          password_phone?: string | null
+          login_contact?: string | null
+          description?: string | null
+          government_id_url?: string | null
+          date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_name?: string
+          account_id_no?: string | null
+          password_phone?: string | null
+          login_contact?: string | null
+          description?: string | null
+          government_id_url?: string | null
+          date?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      subscriptions: {
+        Row: any
+        Insert: any
+        Update: any
+      }
+      documents: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          description: string | null
+          document_type: string
+          attachment_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          description?: string | null
+          document_type: string
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          description?: string | null
+          document_type?: string
+          attachment_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      special_messages: {
+        Row: any
+        Insert: any
+        Update: any
+      }
+      trustees: {
+        Row: any
+        Insert: any
+        Update: any
+      }
+      nominees: {
+        Row: any
+        Insert: any
+        Update: any
+      }
+    }
+  }
+}
+
+export type Tables<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Row"]
+
+export type InsertTables<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Insert"]
+
+export type UpdateTables<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Update"]
+
+export type User = Tables<"users">
+export type DebtLoan = Tables<"debts_loans">
+export type DepositInvestment = Tables<"deposits_investments">
+export type Insurance = Tables<"insurance">
+export type BusinessPlan = Tables<"business_plans">
+export type HealthRecord = Tables<"health_records">
+export type DigitalAccount = Tables<"digital_accounts">
+export type Document = Tables<"documents">
+export type FamilyDocument = Tables<"family_documents">
+export type Reminder = Tables<"reminders">
+export type HealthCondition = Tables<"health_conditions">
+export type FamilyMember = Tables<"family_members">

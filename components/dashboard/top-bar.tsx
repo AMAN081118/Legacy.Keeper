@@ -1,0 +1,432 @@
+"use client"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { NotificationDropdown } from "./notification-dropdown"
+import { logoutUser } from "@/app/actions/auth-actions"
+import { useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { UserCircle } from "lucide-react"
+
+interface TopBarProps {
+  onMobileMenuClick?: () => void
+  user?: {
+    name?: string | null
+    email?: string | null
+    avatarUrl?: string | null
+  }
+}
+
+interface UserRole {
+  name: string
+  relatedUser?: {
+    name: string | null
+    email: string | null
+  } | null
+}
+
+export function TopBar({ onMobileMenuClick = () => {}, user }: TopBarProps) {
+  // Default user object if none is provided
+  const safeUser = user || { name: null, email: null, avatarUrl: null }
+  const [userRoles, setUserRoles] = useState<UserRole[]>([])
+  const [isLoadingRoles, setIsLoadingRoles] = useState(false)
+
+  const userInitials = safeUser.name
+    ? safeUser.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+    : safeUser.email
+      ? safeUser.email[0].toUpperCase()
+      : "U"
+
+  useEffect(() => {
+    const fetchUserRoles = async () => {
+      setIsLoadingRoles(true)
+      try {
+        const supabase = createClient()
+
+        // Get the current user
+        const { data: authData, error: authError } = await supabase.auth.getUser()
+
+        if (authError) {
+          setUserRoles([{ name: 'user', relatedUser: null }])
+          return
+        }
+
+        if (!authData.user) {
+          setUserRoles([{ name: 'user', relatedUser: null }])
+          return
+        }
+
+        const user = authData.user
+
+        const { data: allRoles, error: rolesError } = await supabase
+          .from('roles')
+          .select('*')
+
+        const { data: directRoles, error: directError } = await supabase
+          .from('user_roles')
+          .select('*')
+          .eq('user_id', user.id)
+
+        console.log(directRoles)
+
+        // Now let's try a direct query to get role names
+        const { data: roleNames, error: roleNamesError } = await supabase
+          .from('user_roles')
+          .select('roles!inner(name)')
+          .eq('user_id', user.id)
+
+        // Try a different approach with a raw SQL query via RPC
+        try {
+          const { data: rpcRoles, error: rpcError } = await supabase.rpc('get_user_roles', {
+            user_id_param: user.id
+          })
+        } catch (rpcErr) {
+        }
+
+        // Try a simpler approach - get role IDs and related user information
+        const { data: simpleRoles, error: simpleError } = await supabase
+          .from('user_roles')
+          .select(`
+            *,
+            roles:role_id(name),
+            related_users:related_user_id(name, email)
+          `)
+          .eq('user_id', user.id)
+        
+        // Process the simple roles directly with related user information
+        if (simpleRoles && simpleRoles.length > 0) {
+          // Transform the data into UserRole objects
+          const processedRoles: UserRole[] = []
+
+          for (const item of simpleRoles) {
+            // Extract role name
+            let roleName = 'unknown'
+            if (item.roles) {
+              const rolesObj = item.roles as Record<string, any>
+              if ('name' in rolesObj) {
+                roleName = String(rolesObj.name || 'unknown')
+              }
+            }
+
+            // Extract related user information
+            let relatedUser = null
+            if (item.related_user_id) {
+              if (item.related_users) {
+                const relatedUserObj = item.related_users as Record<string, any>
+                relatedUser = {
+                  name: 'name' in relatedUserObj ? relatedUserObj.name : null,
+                  email: 'email' in relatedUserObj ? relatedUserObj.email : null
+                }
+              } else {
+                // If related_users is null but we have a related_user_id, fetch the user directly
+                try {
+                  // Make a direct query to get the user information
+                  const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('name, email')
+                    .eq('id', item.related_user_id)
+                    .single()
+
+                  if (!userError && userData) {
+                    relatedUser = {
+                      name: userData.name,
+                      email: userData.email
+                    }
+                  }
+                } catch (err) {
+                  // Just leave relatedUser as null on error
+                }
+              }
+            }
+
+            // Add the role to our list
+            processedRoles.push({
+              name: roleName,
+              relatedUser: relatedUser
+            })
+          }
+
+          // Add default user role if not present
+          if (!processedRoles.some(r => r.name === 'user')) {
+            processedRoles.unshift({ name: 'user', relatedUser: null })
+          }
+
+          setUserRoles(processedRoles)
+          setIsLoadingRoles(false)
+          return
+        }
+
+        // If the simple approach didn't work, try the complex one
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select(`
+            id,
+            role_id,
+            related_user_id,
+            roles:role_id(id, name),
+            related_users:related_user_id(id, name, email)
+          `)
+          .eq('user_id', user.id)
+
+        if (error) {
+          setUserRoles([{ name: 'user', relatedUser: null }])
+          return
+        }
+
+        // We'll just use the data we have directly
+
+        // If no roles found in the database, set the default user role
+        if (!data || data.length === 0) {
+          setUserRoles([
+            { name: 'user', relatedUser: null },
+            { name: 'nominee', relatedUser: null }
+          ])
+          setIsLoadingRoles(false)
+          return
+        }
+
+        // Transform the data into UserRole objects
+        const roles: UserRole[] = []
+
+        for (const item of data) {
+          // Handle different possible structures of the roles data
+          let roleName = 'unknown'
+          if (item.roles) {
+            if (typeof item.roles === 'string') {
+              roleName = item.roles
+            } else if (typeof item.roles === 'object') {
+              // It could be an array or an object
+              if (Array.isArray(item.roles) && item.roles.length > 0) {
+                const firstRole = item.roles[0]
+                if (firstRole && typeof firstRole === 'object') {
+                  const roleObj = firstRole as Record<string, any>
+                  if ('name' in roleObj) {
+                    roleName = String(roleObj.name || 'unknown')
+                  }
+                }
+              } else if (item.roles && typeof item.roles === 'object') {
+                const rolesObj = item.roles as Record<string, any>
+                if ('name' in rolesObj) {
+                  roleName = String(rolesObj.name || 'unknown')
+                }
+              }
+            }
+          }
+
+          // Handle related user information
+          let relatedUser = null
+          if (item.related_user_id) {
+            if (item.related_users) {
+              if (Array.isArray(item.related_users) && item.related_users.length > 0) {
+                const firstUser = item.related_users[0]
+                if (firstUser && typeof firstUser === 'object') {
+                  relatedUser = {
+                    name: 'name' in firstUser ? firstUser.name : null,
+                    email: 'email' in firstUser ? firstUser.email : null
+                  }
+                }
+              } else if (typeof item.related_users === 'object') {
+                const relatedUserObj = item.related_users as Record<string, any>
+                relatedUser = {
+                  name: 'name' in relatedUserObj ? relatedUserObj.name : null,
+                  email: 'email' in relatedUserObj ? relatedUserObj.email : null
+                }
+              }
+            } else {
+              // If related_users is null but we have a related_user_id, fetch the user directly
+              try {
+                // Make a direct query to get the user information
+                const { data: userData, error: userError } = await supabase
+                  .from('users')
+                  .select('name, email')
+                  .eq('id', item.related_user_id)
+                  .single()
+
+                if (!userError && userData) {
+                  relatedUser = {
+                    name: userData.name,
+                    email: userData.email
+                  }
+                }
+              } catch (err) {
+                // Just leave relatedUser as null on error
+              }
+            }
+          }
+
+          const role: UserRole = {
+            name: roleName,
+            relatedUser: relatedUser
+          }
+
+          roles.push(role)
+        }
+
+        // Always add the default 'user' role at the beginning
+
+        // First remove any existing 'user' role to avoid duplicates
+        const filteredRoles = roles.filter(role => role.name !== 'user')
+
+        // Then add the 'user' role at the beginning
+        filteredRoles.unshift({ name: 'user', relatedUser: null })
+
+        // Remove hardcoded nominee role addition
+        // Update the roles array
+        setUserRoles(filteredRoles)
+      } catch (error) {
+        setUserRoles([
+          { name: 'user', relatedUser: null }
+        ])
+      } finally {
+        setIsLoadingRoles(false)
+      }
+    }
+
+    fetchUserRoles()
+
+    // Run this effect only once when the component mounts
+    // Don't depend on safeUser.email since it might be null
+  }, [])
+
+  return (
+    <div className="flex h-16 items-center px-4 border-b bg-white">
+      <div className="flex items-center">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="mr-2 h-6 w-6"
+        >
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        <span className="font-bold text-lg text-gray-800 select-none">Legacy Keeper</span>
+      </div>
+      <div className="flex-1" />
+      <div className="flex items-center space-x-4">
+        <NotificationDropdown />
+
+        {/* Roles Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <UserCircle className="h-4 w-4" />
+              <span>Roles {userRoles.length > 0 && `(${userRoles.length})`}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end">
+            <DropdownMenuLabel className="flex justify-between items-center">
+              <span>Your Roles</span>
+              {isLoadingRoles && <span className="text-xs text-muted-foreground">Loading...</span>}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {isLoadingRoles ? (
+              <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                Loading roles...
+              </div>
+            ) : userRoles.length === 0 ? (
+              <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                No roles found
+              </div>
+            ) : (
+              <>
+                {userRoles.map((role, index) => (
+                  <div key={index} className="px-2 py-2 hover:bg-accent rounded-sm cursor-default">
+                    <div className="font-medium capitalize flex items-center">
+                      {role.name === 'user' && (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                      )}
+                      {role.name === 'nominee' && (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                          <circle cx="9" cy="7" r="4" />
+                          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                      )}
+                      {role.name === 'trustee' && (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                      )}
+                      {role.name}
+                    </div>
+                    {role.relatedUser && role.relatedUser.name && (
+                      <div className="text-xs text-muted-foreground mt-1 ml-5 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m9 18 6-6-6-6" />
+                        </svg>
+                        <span>
+                          {role.name === 'nominee' ? 'Nominee for' :
+                           role.name === 'trustee' ? 'Trustee for' :
+                           'Related to'}: <span className="font-medium">{role.relatedUser.name || role.relatedUser.email}</span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <div className="px-2 py-1 mt-2 text-xs text-center text-muted-foreground border-t">
+                  {userRoles.length} role{userRoles.length !== 1 ? 's' : ''} found
+                </div>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* User Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+              <Avatar>
+                <AvatarImage src={safeUser.avatarUrl || ""} alt={safeUser.name || safeUser.email || "User"} />
+                <AvatarFallback>{userInitials}</AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuLabel>
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{safeUser.name || "User"}</p>
+                <p className="text-xs leading-none text-muted-foreground">{safeUser.email || ""}</p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <a href="/dashboard/profile">Profile</a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href="/dashboard/settings">Settings</a>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <form action={logoutUser}>
+                <button type="submit" className="w-full text-left">
+                  Logout
+                </button>
+              </form>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  )
+}
