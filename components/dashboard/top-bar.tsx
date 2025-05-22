@@ -189,8 +189,7 @@ export function TopBar({ onMobileMenuClick = () => {}, user }: TopBarProps) {
         // If no roles found in the database, set the default user role
         if (!data || data.length === 0) {
           setUserRoles([
-            { name: 'user', relatedUser: null },
-            { name: 'nominee', relatedUser: null }
+            { name: 'user', relatedUser: null }
           ])
           setIsLoadingRoles(false)
           return
@@ -273,15 +272,12 @@ export function TopBar({ onMobileMenuClick = () => {}, user }: TopBarProps) {
           roles.push(role)
         }
 
-        // Always add the default 'user' role at the beginning
-
         // First remove any existing 'user' role to avoid duplicates
         const filteredRoles = roles.filter(role => role.name !== 'user')
 
         // Then add the 'user' role at the beginning
         filteredRoles.unshift({ name: 'user', relatedUser: null })
 
-        // Remove hardcoded nominee role addition
         // Update the roles array
         setUserRoles(filteredRoles)
       } catch (error) {
