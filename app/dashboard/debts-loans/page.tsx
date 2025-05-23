@@ -1,8 +1,8 @@
 import { createServerClient } from "@/lib/supabase/server"
-import { DebtsLoansHeader } from "@/components/debts-loans/debts-loans-header"
 import { DebtsLoansTabs } from "@/components/debts-loans/debts-loans-tabs"
 import { createDebtsLoansBucket } from "@/app/actions/create-bucket"
 import { redirect } from "next/navigation"
+import DebtsLoansHeaderClient from "@/components/debts-loans/debts-loans-header-client"
 
 export const metadata = {
   title: "Debts & Loans | Legacy Keeper",
@@ -41,7 +41,7 @@ export default async function DebtsLoansPage() {
 
   return (
     <div className="container mx-auto space-y-6 py-6">
-      <DebtsLoansHeader />
+      <DebtsLoansHeaderClient />
       <DebtsLoansTabs moneyGiven={moneyGiven} moneyReceived={moneyReceived} />
     </div>
   )

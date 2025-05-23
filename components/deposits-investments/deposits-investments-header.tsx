@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { PlusCircle, RefreshCw } from "lucide-react"
 import { useState } from "react"
 import { AddDepositInvestmentModal } from "./add-deposit-investment-modal"
+import { useRole } from "@/components/dashboard/role-context"
 
 interface DepositsInvestmentsHeaderProps {
   totalAmount: number
@@ -14,6 +15,7 @@ interface DepositsInvestmentsHeaderProps {
 export function DepositsInvestmentsHeader({ totalAmount, count, onRefresh }: DepositsInvestmentsHeaderProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const { currentRole } = useRole()
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -33,10 +35,12 @@ export function DepositsInvestmentsHeader({ totalAmount, count, onRefresh }: Dep
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
             <span className="sr-only">Refresh</span>
           </Button>
-          <Button onClick={() => setIsAddModalOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add new Investment
-          </Button>
+          {currentRole?.name !== "nominee" && (
+            <Button onClick={() => setIsAddModalOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add new Investment
+            </Button>
+          )}
         </div>
       </div>
 

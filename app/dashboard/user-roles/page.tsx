@@ -5,12 +5,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import type { Role, UserRole } from "@/lib/supabase/database.types";
+import { useRole } from "@/components/dashboard/role-context";
 
 export default function UserRolesPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [roleRelatedUsers, setRoleRelatedUsers] = useState<Record<string, { name: string | null; email: string | null } | null>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { setCurrentRole } = useRole();
 
   useEffect(() => {
     const fetchUserRoles = async () => {
@@ -73,6 +75,16 @@ export default function UserRolesPage() {
     fetchUserRoles();
   }, []);
 
+  // Add a default 'user' role for every user
+  const allRoles = [
+    {
+      id: "user",
+      name: "user",
+      description: "Default account role. Access all your own pages.",
+    },
+    ...roles,
+  ];
+
   if (loading) return <div className="p-8 text-center">Loading...</div>;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
@@ -80,15 +92,55 @@ export default function UserRolesPage() {
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-6">Your Roles</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {roles.length === 0 ? (
+        {allRoles.length === 0 ? (
           <div className="col-span-full text-center text-gray-500">No roles assigned.</div>
         ) : (
-          roles.map((role) => {
-            // Find the userRoles entry for this role
+          allRoles.map((role) => {
             const userRole = Object.entries(roleRelatedUsers).find(
               ([key, _]) => key.startsWith(role.id + "_")
             );
             const related = userRole ? userRole[1] : null;
+            const handleSwitchRole = async () => {
+              let accessCategories: string[] | undefined = undefined;
+              if (role.name === "nominee" && related && userRole) {
+                // Extract related_user_id from the userRole key
+                const userRoleKey = userRole[0]; // e.g., "roleid_relateduserid"
+                const relatedUserId = userRoleKey.split("_")[1];
+                const supabase = createClient();
+                // Get current session user's email (nominee's email)
+                const { data: userData } = await supabase.auth.getUser();
+                const nomineeEmail = userData.user?.email;
+                console.log("nomineeEmail:", nomineeEmail, "relatedUserId:", relatedUserId); // <-- print values
+                const { data: nomineeData } = await supabase
+                  .from("nominees")
+                  .select("access_categories")
+                  .eq("email", nomineeEmail)
+                  .eq("user_id", relatedUserId)
+                  .maybeSingle();
+                accessCategories = nomineeData?.access_categories || [];
+              }
+              if (role.name === "user") {
+                // For the default user role, allow all pages (no restrictions)
+                accessCategories = undefined;
+                setCurrentRole({
+                  id: role.id,
+                  name: role.name,
+                  description: role.description || undefined,
+                  relatedUser: null,
+                  accessCategories,
+                });
+                window.location.href = "/dashboard";
+                return;
+              }
+              console.log("Access categories for this role:", accessCategories);
+              setCurrentRole({
+                id: role.id,
+                name: role.name,
+                description: role.description || undefined,
+                relatedUser: related,
+                accessCategories,
+              });
+            };
             return (
               <Card key={role.id} className="p-6 flex flex-col items-start shadow-md hover:shadow-lg transition-shadow">
                 <div className="text-lg font-semibold mb-2">{role.name}</div>
@@ -98,7 +150,7 @@ export default function UserRolesPage() {
                     For user: {related.name || related.email || "Unknown"}
                   </div>
                 )}
-                <Button className="mt-4" variant="outline" onClick={() => alert(`Switching to role: ${role.name}`)}>
+                <Button className="mt-4" variant="outline" onClick={handleSwitchRole}>
                   Change to this role
                 </Button>
               </Card>

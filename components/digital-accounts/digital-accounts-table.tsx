@@ -3,18 +3,21 @@
 import { useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Eye, Trash2 } from "lucide-react"
+import { Eye } from "lucide-react"
 import type { DigitalAccount } from "@/lib/supabase/database.types"
 import { formatDate } from "@/lib/utils"
 import { Pagination } from "@/components/ui/pagination"
+import { EditAccountModal } from "./edit-account-modal"
+import { DeleteAccountModal } from "./delete-account-modal"
 
 interface DigitalAccountsTableProps {
   accounts: DigitalAccount[]
   onEdit: (account: DigitalAccount) => void
   onDelete: (account: DigitalAccount) => void
+  currentRole: { name: string } | null
 }
 
-export function DigitalAccountsTable({ accounts, onEdit, onDelete }: DigitalAccountsTableProps) {
+export function DigitalAccountsTable({ accounts, onEdit, onDelete, currentRole }: DigitalAccountsTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
 
@@ -51,12 +54,16 @@ export function DigitalAccountsTable({ accounts, onEdit, onDelete }: DigitalAcco
                   <TableCell>{account.password_phone ? "••••••••" : "-"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => onEdit(account)}>
+                      {/* Only show edit/delete if not nominee */}
+                      <Button variant="outline" size="icon" aria-label="View">
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => onDelete(account)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {currentRole?.name !== "nominee" && (
+                        <>
+                          <EditAccountModal account={account} />
+                          <DeleteAccountModal account={account} />
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

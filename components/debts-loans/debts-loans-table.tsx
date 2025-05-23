@@ -10,6 +10,7 @@ import { DetailsDebtLoanModal } from "./details-debt-loan-modal"
 import { EditDebtLoanModal } from "./edit-debt-loan-modal"
 import { DeleteDebtLoanModal } from "./delete-debt-loan-modal"
 import { DebtsLoansFilter } from "./debts-loans-filter"
+import { useRole } from "@/components/dashboard/role-context"
 import type { DebtLoan } from "@/lib/supabase/database.types"
 
 interface DebtsLoansTableProps {
@@ -18,6 +19,7 @@ interface DebtsLoansTableProps {
 }
 
 export function DebtsLoansTable({ data, type }: DebtsLoansTableProps) {
+  const { currentRole } = useRole();
   const [filteredData, setFilteredData] = useState<DebtLoan[]>(data)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedDebtLoan, setSelectedDebtLoan] = useState<DebtLoan | null>(null)
@@ -60,7 +62,6 @@ export function DebtsLoansTable({ data, type }: DebtsLoansTableProps) {
   return (
     <div className="space-y-4">
       <DebtsLoansFilter originalData={data} onFilter={handleFilter} />
-
       <div className="rounded-md border">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -111,14 +112,18 @@ export function DebtsLoansTable({ data, type }: DebtsLoansTableProps) {
                             <FileText className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEdit(item)}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDelete(item)} className="text-red-600">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
+                          {currentRole?.name !== "nominee" && (
+                            <DropdownMenuItem onClick={() => handleEdit(item)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                          )}
+                          {currentRole?.name !== "nominee" && (
+                            <DropdownMenuItem onClick={() => handleDelete(item)} className="text-red-600">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>

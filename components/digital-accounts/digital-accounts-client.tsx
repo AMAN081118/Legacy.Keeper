@@ -15,12 +15,14 @@ import { useToast } from "@/components/ui/use-toast"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useRole } from "@/components/dashboard/role-context"
 
 interface DigitalAccountsClientProps {
   userId: string
 }
 
 export function DigitalAccountsClient({ userId }: DigitalAccountsClientProps) {
+  const { currentRole } = useRole();
   const [accounts, setAccounts] = useState<DigitalAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -40,8 +42,21 @@ export function DigitalAccountsClient({ userId }: DigitalAccountsClientProps) {
       }
       setError(null)
 
+      // Use related user id if nominee, else use own userId
+      let effectiveUserId = userId;
+      if (currentRole?.name === "nominee" && currentRole.relatedUser?.email) {
+        // Fetch the related user's id by email if nominee
+        try {
+          const res = await fetch(`/api/user-id-by-email?email=${encodeURIComponent(currentRole.relatedUser.email)}`)
+          if (res.ok) {
+            const data = await res.json()
+            if (data.userId) effectiveUserId = data.userId
+          }
+        } catch {}
+      }
+
       try {
-        const result = await getDigitalAccounts(userId)
+        const result = await getDigitalAccounts(effectiveUserId)
 
         if (result.success) {
           setAccounts(result.data || [])
@@ -65,7 +80,7 @@ export function DigitalAccountsClient({ userId }: DigitalAccountsClientProps) {
         setLoading(false)
       }
     },
-    [userId, toast],
+    [userId, toast, currentRole],
   )
 
   useEffect(() => {
@@ -158,7 +173,7 @@ export function DigitalAccountsClient({ userId }: DigitalAccountsClientProps) {
       ) : accounts.length === 0 && !error ? (
         <EmptyState onAddNew={() => setIsAddModalOpen(true)} />
       ) : (
-        !error && <DigitalAccountsTable accounts={filteredAccounts} onEdit={handleEdit} onDelete={handleDelete} />
+        !error && <DigitalAccountsTable accounts={filteredAccounts} onEdit={handleEdit} onDelete={handleDelete} currentRole={currentRole} />
       )}
 
       <AddAccountModal

@@ -9,13 +9,13 @@ import { ViewBusinessPlanModal } from "./view-business-plan-modal"
 import { Download } from "lucide-react"
 import {
   Pagination,
-  PaginationContent,
   PaginationItem,
   PaginationLink,
   PaginationPrevious,
   PaginationNext,
 } from "@/components/ui/pagination"
 import type { BusinessPlan } from "@/lib/supabase/database.types"
+import { useRole } from "@/components/dashboard/role-context"
 
 interface BusinessPlansTableProps {
   businessPlans: BusinessPlan[]
@@ -26,8 +26,9 @@ export function BusinessPlansTable({ businessPlans, error }: BusinessPlansTableP
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
+  const { currentRole } = useRole()
 
-  // Filter business plans based on search term
+  // No need to filter by user for nominee, backend already does it
   const filteredBusinessPlans = businessPlans.filter((plan) => {
     const searchTermLower = searchTerm.toLowerCase()
     return (
@@ -104,8 +105,9 @@ export function BusinessPlansTable({ businessPlans, error }: BusinessPlansTableP
                     <td className="p-3 text-center">
                       <div className="flex justify-center space-x-2">
                         <ViewBusinessPlanModal businessPlan={plan} />
-                        <EditBusinessPlanModal businessPlan={plan} />
-                        <DeleteBusinessPlanModal businessPlanId={plan.id} />
+                        {/* Only show edit/delete if not nominee */}
+                        {currentRole?.name !== "nominee" && <EditBusinessPlanModal businessPlan={plan} />}
+                        {currentRole?.name !== "nominee" && <DeleteBusinessPlanModal businessPlanId={plan.id} />}
                       </div>
                     </td>
                   </tr>
@@ -122,29 +124,7 @@ export function BusinessPlansTable({ businessPlans, error }: BusinessPlansTableP
             Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredBusinessPlans.length)} of{" "}
             {filteredBusinessPlans.length} entries
           </div>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                />
-              </PaginationItem>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <PaginationItem key={page}>
-                  <PaginationLink isActive={page === currentPage} onClick={() => setCurrentPage(page)}>
-                    {page}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
       )}
     </div>

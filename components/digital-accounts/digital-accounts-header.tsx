@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Download, Plus, Search } from "lucide-react"
+import { useRole } from "@/components/dashboard/role-context"
 
 interface DigitalAccountsHeaderProps {
   onAddNew: () => void
@@ -11,6 +12,7 @@ interface DigitalAccountsHeaderProps {
 }
 
 export function DigitalAccountsHeader({ onAddNew, onSearch, searchQuery }: DigitalAccountsHeaderProps) {
+  const { currentRole } = useRole();
   return (
     <div className="space-y-4">
       <div>
@@ -24,10 +26,12 @@ export function DigitalAccountsHeader({ onAddNew, onSearch, searchQuery }: Digit
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button onClick={onAddNew} className="w-full sm:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
-            Add New
-          </Button>
+          {currentRole?.name !== "nominee" && (
+            <Button onClick={onAddNew} className="w-full sm:w-auto">
+              <Plus className="mr-2 h-4 w-4" />
+              Add New
+            </Button>
+          )}
 
           <Button variant="outline" className="w-full sm:w-auto">
             <Download className="mr-2 h-4 w-4" />

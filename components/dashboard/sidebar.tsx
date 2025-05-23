@@ -20,6 +20,8 @@ import {
   UserCheck,
   UserPlus,
 } from "lucide-react"
+import { useRole } from "@/components/dashboard/role-context"
+
 const sidebarLinks = [
   {
     title: "Dashboard",
@@ -120,25 +122,94 @@ const sidebarLinks = [
 ]
 
 export function Sidebar() {
-  const pathname = usePathname()
+  const pathname = usePathname();
+  const { currentRole } = useRole();
+
+  // Debug: print access categories and session user email to the terminal
+  if (currentRole && currentRole.accessCategories) {
+    // eslint-disable-next-line no-console
+    console.log("[Sidebar] Current role access categories:", currentRole.accessCategories);
+  }
+  // Print current session user email
+  if (typeof window !== "undefined") {
+    import("@/lib/supabase/client").then(({ createClient }) => {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user?.email) {
+          // eslint-disable-next-line no-console
+          console.log("[Sidebar] Current session user email:", data.user.email);
+        }
+      });
+    });
+  }
+
+  // Helper: get allowed sections/pages from currentRole
+  const allowedSections = currentRole?.accessCategories;
 
   // Group links by their group
   const groupedLinks = sidebarLinks.reduce(
     (acc, link) => {
       if (!link.group) {
-        if (!acc.ungrouped) acc.ungrouped = []
-        acc.ungrouped.push(link)
+        if (!acc.ungrouped) acc.ungrouped = [];
+        acc.ungrouped.push(link);
       } else {
-        if (!acc[link.group]) acc[link.group] = []
-        acc[link.group].push(link)
+        if (!acc[link.group]) acc[link.group] = [];
+        acc[link.group].push(link);
       }
-      return acc
+      return acc;
     },
     {} as Record<string, typeof sidebarLinks>,
-  )
+  );
 
   // Get the groups in order
-  const groups = ["Finance", "Family", "Financial Planning"]
+  const groups = ["Finance", "Family", "Financial Planning"];
+
+  // Helper: check if a link is allowed
+  const isLinkAllowed = (link: any) => {
+    if (!currentRole || currentRole.name === "user" || !currentRole.accessCategories) return true;
+    // If accessCategories contains a group, allow all links in that group
+    if (link.group && currentRole.accessCategories.includes(link.group)) return true;
+    // If accessCategories contains the link title, allow this link
+    if (currentRole.accessCategories.includes(link.title)) return true;
+    return false;
+  };
+
+  // Helper: render a sidebar link (enabled or disabled)
+  const renderSidebarLink = (link: any, idx: number) => {
+    const allowed = isLinkAllowed(link);
+    if (allowed) {
+      return (
+        <Link
+          key={link.href || idx}
+          href={link.href}
+          className={cn(
+            "flex items-center rounded-md px-3 py-2 text-sm font-medium",
+            pathname === link.href
+              ? "bg-gray-100 text-gray-900"
+              : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
+          )}
+        >
+          <link.icon className="mr-2 h-4 w-4" />
+          {link.title}
+        </Link>
+      );
+    } else {
+      return (
+        <span
+          key={link.href || idx}
+          className={cn(
+            "flex items-center rounded-md px-3 py-2 text-sm font-medium cursor-not-allowed opacity-50 select-none",
+            pathname === link.href ? "bg-gray-50" : ""
+          )}
+          tabIndex={-1}
+          aria-disabled="true"
+        >
+          <link.icon className="mr-2 h-4 w-4" />
+          {link.title}
+        </span>
+      );
+    }
+  };
 
   return (
     <aside className="hidden w-64 flex-col border-r bg-white md:flex fixed inset-y-0 left-0 z-30">
@@ -162,66 +233,21 @@ export function Sidebar() {
       </div>
       <nav className="flex-1 overflow-y-auto p-4 scrollbar-hide">
         <ul className="space-y-2">
-          {groupedLinks.ungrouped?.slice(0, 1).map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className={cn(
-                  "flex items-center rounded-md px-3 py-2 text-sm font-medium",
-                  pathname === link.href
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
-                )}
-              >
-                <link.icon className="mr-2 h-4 w-4" />
-                {link.title}
-              </Link>
-            </li>
-          ))}
+          {groupedLinks.ungrouped?.slice(0, 1).map((link, idx) => renderSidebarLink(link, idx))}
         </ul>
 
         {groups.map((group) => (
           <div key={group} className="mt-6">
             <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500">{group}</h3>
             <ul className="space-y-1">
-              {groupedLinks[group]?.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className={cn(
-                      "flex items-center rounded-md px-3 py-2 text-sm font-medium",
-                      pathname === link.href
-                        ? "bg-gray-100 text-gray-900"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
-                    )}
-                  >
-                    <link.icon className="mr-2 h-4 w-4" />
-                    {link.title}
-                  </Link>
-                </li>
-              ))}
+              {groupedLinks[group]?.map((link, idx) => renderSidebarLink(link, idx))}
             </ul>
           </div>
         ))}
 
         <div className="mt-6">
           <ul className="space-y-1">
-            {groupedLinks.ungrouped?.slice(1).map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className={cn(
-                    "flex items-center rounded-md px-3 py-2 text-sm font-medium",
-                    pathname === link.href
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
-                  )}
-                >
-                  <link.icon className="mr-2 h-4 w-4" />
-                  {link.title}
-                </Link>
-              </li>
-            ))}
+            {groupedLinks.ungrouped?.slice(1).map((link, idx) => renderSidebarLink(link, idx))}
           </ul>
         </div>
       </nav>

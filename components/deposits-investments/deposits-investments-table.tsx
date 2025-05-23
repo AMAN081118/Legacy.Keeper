@@ -19,6 +19,7 @@ import {
   PaginationPrevious,
   PaginationNext,
 } from "@/components/ui/pagination"
+import { useRole } from "@/components/dashboard/role-context"
 
 interface DepositsInvestmentsTableProps {
   depositsInvestments: DepositInvestment[]
@@ -27,6 +28,7 @@ interface DepositsInvestmentsTableProps {
 }
 
 export function DepositsInvestmentsTable({ depositsInvestments, loading, onRefresh }: DepositsInvestmentsTableProps) {
+  const { currentRole } = useRole();
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
   const [selectedItem, setSelectedItem] = useState<DepositInvestment | null>(null)
@@ -104,19 +106,19 @@ export function DepositsInvestmentsTable({ depositsInvestments, loading, onRefre
                 </tr>
               ) : currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-4 text-center">
-                    No deposits or investments found
+                  <td colSpan={6} className="p-3 text-center text-muted-foreground">
+                    No deposits/investments found
                   </td>
                 </tr>
               ) : (
                 currentItems.map((item) => (
-                  <tr key={item.id} className="border-b transition-colors hover:bg-muted/50">
-                    <td className="p-4 align-middle">{formatDate(item.date)}</td>
-                    <td className="p-4 align-middle font-medium">{item.name}</td>
-                    <td className="p-4 align-middle">{item.description || "-"}</td>
-                    <td className="p-4 align-middle">{getInvestmentTypeLabel(item.investment_type)}</td>
-                    <td className="p-4 align-middle">₹{item.amount.toLocaleString()}</td>
-                    <td className="p-4 align-middle">
+                  <tr key={item.id} className="border-t">
+                    <td className="p-3">{formatDate(item.date)}</td>
+                    <td className="p-3 font-medium">{item.name}</td>
+                    <td className="p-3">{item.description || "-"}</td>
+                    <td className="p-3">{getInvestmentTypeLabel(item.investment_type)}</td>
+                    <td className="p-3">₹{item.amount.toLocaleString()}</td>
+                    <td className="p-3 text-center">
                       <div className="flex justify-center space-x-2">
                         <Button
                           variant="ghost"
@@ -129,28 +131,32 @@ export function DepositsInvestmentsTable({ depositsInvestments, loading, onRefre
                           <Eye className="h-4 w-4" />
                           <span className="sr-only">View</span>
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedItem(item)
-                            setIsEditModalOpen(true)
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedItem(item)
-                            setIsDeleteModalOpen(true)
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
+                        {currentRole?.name !== "nominee" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedItem(item)
+                              setIsEditModalOpen(true)
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
+                          </Button>
+                        )}
+                        {currentRole?.name !== "nominee" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedItem(item)
+                              setIsDeleteModalOpen(true)
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
