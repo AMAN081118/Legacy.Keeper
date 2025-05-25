@@ -166,6 +166,7 @@ export function Sidebar() {
 
   // Helper: check if a link is allowed
   const isLinkAllowed = (link: any) => {
+    if (link.title === "Dashboard") return true;
     if (!currentRole || currentRole.name === "user" || !currentRole.accessCategories) return true;
     // If accessCategories contains a group, allow all links in that group
     if (link.group && currentRole.accessCategories.includes(link.group)) return true;
