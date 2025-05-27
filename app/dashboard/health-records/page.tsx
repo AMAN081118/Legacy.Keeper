@@ -3,10 +3,28 @@ import { getHealthRecords } from "@/app/actions/health-records"
 import { HealthRecordsHeader } from "@/components/health-records/health-records-header"
 import { HealthRecordsTable } from "@/components/health-records/health-records-table"
 import { EmptyState } from "@/components/health-records/empty-state"
+import { cookies } from "next/headers"
+import { getCurrentRoleFromSession } from "@/app/actions/user-roles"
+import { redirect } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
 export default async function HealthRecordsPage() {
+  const cookieStore = cookies()
+  let currentRole = null
+  try {
+    currentRole = await getCurrentRoleFromSession(cookieStore)
+  } catch {}
+
+  // --- GUARD: Only allow access if user is not nominee, or nominee with 'Family' access ---
+  if (
+    currentRole?.name === "nominee" &&
+    (!currentRole.accessCategories || !currentRole.accessCategories.includes("Family"))
+  ) {
+    redirect("/dashboard")
+  }
+  // -----------------------------------------------------------------------------
+
   const { success, data: healthRecords } = await getHealthRecords()
 
   return (

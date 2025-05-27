@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import type { DepositInvestment } from "@/lib/supabase/database.types"
 import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
+import { useState } from "react"
+import { FileUpload } from "@/components/ui/file-upload"
 
 interface DepositInvestmentDetailsModalProps {
   isOpen: boolean
@@ -17,6 +19,8 @@ export function DepositInvestmentDetailsModal({
   onClose,
   depositInvestment,
 }: DepositInvestmentDetailsModalProps) {
+  const [showFileViewer, setShowFileViewer] = useState(false)
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "N/A"
     try {
@@ -39,9 +43,57 @@ export function DepositInvestmentDetailsModal({
     }
   }
 
+  const getFileType = (url: string) => {
+    const extension = url.split('.').pop()?.toLowerCase()
+    if (['pdf'].includes(extension || '')) return 'pdf'
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(extension || '')) return 'image'
+    if (['doc', 'docx'].includes(extension || '')) return 'document'
+    return 'other'
+  }
+
+  const renderFileViewer = () => {
+    if (!depositInvestment.attachment_url) return null
+
+    const fileType = getFileType(depositInvestment.attachment_url)
+
+    switch (fileType) {
+      case 'pdf':
+        return (
+          <iframe
+            src={depositInvestment.attachment_url}
+            className="w-full h-[500px] border rounded-lg"
+            title="PDF Viewer"
+          />
+        )
+      case 'image':
+        return (
+          <img
+            src={depositInvestment.attachment_url}
+            alt="Attachment"
+            className="max-w-full h-auto rounded-lg"
+          />
+        )
+      case 'document':
+      case 'other':
+        return (
+          <div className="p-4 text-center">
+            <p className="text-muted-foreground mb-4">This file type cannot be previewed directly.</p>
+            <Button
+              variant="outline"
+              onClick={() => window.open(depositInvestment.attachment_url, '_blank')}
+            >
+              Open File
+            </Button>
+          </div>
+        )
+      default:
+        return null
+    }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Investment or Deposit Details</DialogTitle>
         </DialogHeader>
@@ -57,12 +109,12 @@ export function DepositInvestmentDetailsModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">Amount</p>
-              <p className="text-lg font-semibold">₹{depositInvestment.amount.toLocaleString()}</p>
+              <p className="text-lg font-semibold">₹{(depositInvestment.amount * 1000).toLocaleString()}</p>
             </div>
             {depositInvestment.expected_returns && (
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Expected Returns</p>
-                <p className="text-lg font-semibold">₹{depositInvestment.expected_returns.toLocaleString()}</p>
+                <p className="text-lg font-semibold">₹{(depositInvestment.expected_returns * 1000).toLocaleString()}</p>
               </div>
             )}
           </div>
@@ -102,32 +154,18 @@ export function DepositInvestmentDetailsModal({
           )}
 
           {depositInvestment.attachment_url && (
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Attachment</p>
-              <a
-                href={depositInvestment.attachment_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline flex items-center"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="mr-1"
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">Attachment</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(depositInvestment.attachment_url, '_blank')}
                 >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                View Attachment
-              </a>
+                  View Attachment
+                </Button>
+              </div>
+              {renderFileViewer()}
             </div>
           )}
 

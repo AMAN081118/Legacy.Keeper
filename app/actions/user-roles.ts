@@ -1,3 +1,4 @@
+import { cookies } from "next/headers"
 import { createServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase/database.types"
 
@@ -16,4 +17,24 @@ export async function getUserRoles(userId: string): Promise<string[]> {
 
   // Return role names
   return (data || []).map((item: any) => item.roles?.name).filter(Boolean)
+}
+
+export async function getCurrentRoleFromSession() {
+  try {
+    const cookieStore = await cookies()
+    const currentRoleCookie = await cookieStore.get('currentRole')
+    console.log('[Debug] Current role cookie:', currentRoleCookie?.value)
+    
+    if (!currentRoleCookie?.value) {
+      console.log('[Debug] No role cookie found, defaulting to null')
+      return null
+    }
+    
+    const role = JSON.parse(decodeURIComponent(currentRoleCookie.value))
+    console.log('[Debug] Parsed role from cookie:', role)
+    return role
+  } catch (error) {
+    console.error('[Debug] Error reading role from session:', error)
+    return null
+  }
 }

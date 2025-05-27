@@ -38,7 +38,7 @@ export function EditInsuranceModal({ id }: { id: string }) {
       // Check if bucket exists
       if (!bucketReady) {
         const checkBucket = async () => {
-          const exists = await ensureBucketExists("user_documents")
+          const exists = await ensureBucketExists("insurance")
           setBucketReady(exists)
           if (!exists) {
             toast({
@@ -249,7 +249,7 @@ export function EditInsuranceModal({ id }: { id: string }) {
                     </div>
                   ) : (
                     <FileUpload
-                      bucket="user_documents"
+                      bucket="insurance"
                       onUploadComplete={handleFileUpload}
                       accept=".pdf,.jpg,.jpeg,.png"
                     />

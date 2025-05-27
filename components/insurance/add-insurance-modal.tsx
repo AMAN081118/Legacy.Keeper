@@ -32,7 +32,7 @@ export function AddInsuranceModal({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (open && !bucketReady) {
       const checkBucket = async () => {
-        const exists = await ensureBucketExists("user_documents")
+        const exists = await ensureBucketExists("insurance")
         setBucketReady(exists)
         if (!exists) {
           toast({
@@ -207,14 +207,24 @@ export function AddInsuranceModal({ children }: { children: React.ReactNode }) {
             <Label>Government ID</Label>
             <div className="border rounded-md p-3">
               {attachmentUrl ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm truncate max-w-[300px]">{attachmentUrl.split("/").pop()}</span>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setAttachmentUrl(null)}>
-                    <X className="h-4 w-4" />
-                  </Button>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm truncate max-w-[200px]">{attachmentUrl.split("/").pop()}</span>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(attachmentUrl, "_blank")}
+                    >
+                      View
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setAttachmentUrl(null)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ) : (
-                <FileUpload bucket="user_documents" onUploadComplete={handleFileUpload} accept=".pdf,.jpg,.jpeg,.png" />
+                <FileUpload bucket="insurance" onUploadComplete={handleFileUpload} accept=".pdf,.jpg,.jpeg,.png" />
               )}
             </div>
           </div>

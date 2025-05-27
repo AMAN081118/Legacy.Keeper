@@ -18,7 +18,7 @@ interface FileUploadProps {
 }
 
 export function FileUpload({
-  bucket = "user_documents",
+  bucket = "deposits-investments",
   onUploadComplete,
   onFileChange,
   accept = ".pdf,.jpg,.jpeg,.png",

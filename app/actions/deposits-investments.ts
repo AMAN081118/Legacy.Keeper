@@ -87,7 +87,9 @@ export async function addDepositInvestment(formData: FormData) {
 
   try {
     const name = formData.get("name") as string
-    const amount = Number.parseFloat(formData.get("amount") as string)
+    const rawAmount = Number.parseFloat(formData.get("amount") as string)
+    // Convert amount to thousands to fit within database precision
+    const amount = rawAmount / 1000
     const investmentType = formData.get("investmentType") as DepositInvestment["investment_type"]
     const description = formData.get("description") as string
     const paidTo = formData.get("paidTo") as string
@@ -95,12 +97,12 @@ export async function addDepositInvestment(formData: FormData) {
     const maturityDate = (formData.get("maturityDate") as string) || null
     const interestRate = formData.get("interestRate") ? Number.parseFloat(formData.get("interestRate") as string) : null
     const expectedReturns = formData.get("expectedReturns")
-      ? Number.parseFloat(formData.get("expectedReturns") as string)
+      ? Number.parseFloat(formData.get("expectedReturns") as string) / 1000 // Convert expected returns to thousands too
       : null
     const status = (formData.get("status") as DepositInvestment["status"]) || "Active"
+    let attachmentUrl: string | null = null
 
     // Handle attachment if present
-    let attachmentUrl = null
     const attachmentFile = formData.get("attachment") as File
 
     if (attachmentFile && attachmentFile.size > 0) {
@@ -108,7 +110,7 @@ export async function addDepositInvestment(formData: FormData) {
       const fileName = `${userId}/${Date.now()}.${fileExt}`
 
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("user_documents")
+        .from("deposits-investments")
         .upload(fileName, attachmentFile)
 
       if (uploadError) {
@@ -116,8 +118,7 @@ export async function addDepositInvestment(formData: FormData) {
         return { success: false, error: uploadError.message }
       }
 
-      const { data: urlData } = await supabase.storage.from("user_documents").getPublicUrl(fileName)
-
+      const { data: urlData } = await supabase.storage.from("deposits-investments").getPublicUrl(fileName)
       attachmentUrl = urlData.publicUrl
     }
 
@@ -202,7 +203,7 @@ export async function updateDepositInvestment(id: string, formData: FormData) {
       const fileName = `${userId}/${Date.now()}.${fileExt}`
 
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("user_documents")
+        .from("deposits-investments")
         .upload(fileName, attachmentFile)
 
       if (uploadError) {
@@ -210,7 +211,7 @@ export async function updateDepositInvestment(id: string, formData: FormData) {
         return { success: false, error: uploadError.message }
       }
 
-      const { data: urlData } = await supabase.storage.from("user_documents").getPublicUrl(fileName)
+      const { data: urlData } = await supabase.storage.from("deposits-investments").getPublicUrl(fileName)
 
       attachmentUrl = urlData.publicUrl
     }

@@ -3,6 +3,8 @@ import { DebtsLoansTabs } from "@/components/debts-loans/debts-loans-tabs"
 import { createDebtsLoansBucket } from "@/app/actions/create-bucket"
 import { redirect } from "next/navigation"
 import DebtsLoansHeaderClient from "@/components/debts-loans/debts-loans-header-client"
+import { cookies } from "next/headers"
+import { getCurrentRoleFromSession } from "@/app/actions/user-roles"
 
 export const metadata = {
   title: "Debts & Loans | Legacy Keeper",
@@ -11,6 +13,7 @@ export const metadata = {
 
 export default async function DebtsLoansPage() {
   const supabase = createServerClient()
+  const cookieStore = cookies()
 
   // Check if user is authenticated
   const {
@@ -21,14 +24,38 @@ export default async function DebtsLoansPage() {
     redirect("/login")
   }
 
+  // Get current role from session (if available)
+  let currentRole = null
+  try {
+    currentRole = await getCurrentRoleFromSession(cookieStore)
+  } catch {}
+
+  // --- GUARD: Only allow access if user is not nominee, or nominee with 'Finance' access ---
+  if (
+    currentRole?.name === "nominee" &&
+    (!currentRole.accessCategories || !currentRole.accessCategories.includes("Finance"))
+  ) {
+    redirect("/dashboard")
+  }
+  // -----------------------------------------------------------------------------
+
+  // Determine the correct userId to fetch data for
+  let userId = user.id;
+  if (currentRole?.name === "nominee" && currentRole.relatedUser?.email) {
+    // Look up the related user's id by email
+    const { data: relatedUser } = await supabase.from("users").select("id").eq("email", currentRole.relatedUser.email).single();
+    if (relatedUser?.id) userId = relatedUser.id;
+  }
+
   // Create the bucket if it doesn't exist
   const bucketResult = await createDebtsLoansBucket()
   console.log("Bucket creation result:", bucketResult)
 
-  // Fetch debts and loans data
+  // Fetch debts and loans data for the correct user
   const { data: debtsLoans, error } = await supabase
     .from("debts_loans")
     .select("*")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false })
 
   if (error) {

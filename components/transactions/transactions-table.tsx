@@ -20,6 +20,7 @@ import type { Tables } from "@/lib/supabase/database.types"
 
 interface TransactionsTableProps {
   transactions: Tables<"transactions">[]
+  currentRole?: { name: string; relatedUser?: { name: string | null; email: string | null } | null }
 }
 
 type FilterOptions = {
@@ -30,7 +31,7 @@ type FilterOptions = {
   }
 }
 
-export function TransactionsTable({ transactions }: TransactionsTableProps) {
+export function TransactionsTable({ transactions, currentRole }: TransactionsTableProps) {
   const [transactionsData, setTransactionsData] = useState<Tables<"transactions">[]>(transactions)
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
@@ -309,15 +310,15 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
       setFilters({
         ...filters,
         dateRange: {
-          ...filters.dateRange,
           from: undefined,
+          to: filters.dateRange?.to ?? undefined,
         },
       })
     } else if (filterType.startsWith("To:")) {
       setFilters({
         ...filters,
         dateRange: {
-          ...filters.dateRange,
+          from: filters.dateRange?.from ?? undefined,
           to: undefined,
         },
       })
@@ -459,24 +460,28 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
                           <FileText className="h-4 w-4" />
                           <span className="sr-only">View Details</span>
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleEditTransaction(transaction)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-500"
-                          onClick={() => handleDeleteTransaction(transaction.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
+                        {currentRole?.name !== "nominee" && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleEditTransaction(transaction)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-500"
+                              onClick={() => handleDeleteTransaction(transaction.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

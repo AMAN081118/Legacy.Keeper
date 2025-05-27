@@ -28,7 +28,7 @@ export async function getInsuranceCount() {
   return { count: count || 0 }
 }
 
-export async function getInsuranceList(page = 1, pageSize = 5, insuranceType?: string, searchQuery?: string) {
+export async function getInsuranceList(page = 1, pageSize = 5, insuranceType?: string, searchQuery?: string, userIdOverride?: string) {
   const cookieStore = cookies()
   const supabase = createServerClient(cookieStore)
 
@@ -37,7 +37,7 @@ export async function getInsuranceList(page = 1, pageSize = 5, insuranceType?: s
     return { data: [], count: 0 }
   }
 
-  const userId = session.session.user.id
+  const userId = userIdOverride || session.session.user.id
   const startIndex = (page - 1) * pageSize
 
   let query = supabase

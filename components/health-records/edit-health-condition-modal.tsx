@@ -52,7 +52,9 @@ export function EditHealthConditionModal({ condition, trigger }: EditHealthCondi
       formData.append("health_record_id", condition.health_record_id)
       formData.append("condition_name", conditionName)
       formData.append("doctor_name", doctorName)
-      formData.append("visit_date", visitDate ? format(visitDate, "yyyy-MM-dd") : "")
+      if (visitDate) {
+        formData.append("visit_date", format(visitDate, "yyyy-MM-dd"))
+      }
       formData.append("description", description)
       formData.append("attachment_url", attachmentUrl)
 

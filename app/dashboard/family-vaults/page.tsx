@@ -3,6 +3,7 @@ import { FamilyVaultsClient } from "@/components/family-vaults/family-vaults-cli
 import { createServerClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import { getCurrentRoleFromSession } from "@/app/actions/user-roles"
 
 export default async function FamilyVaultsPage() {
   const cookieStore = cookies()
@@ -14,6 +15,21 @@ export default async function FamilyVaultsPage() {
   if (!user) {
     redirect("/login")
   }
+
+  // Get current role from session (if available)
+  let currentRole = null
+  try {
+    currentRole = await getCurrentRoleFromSession(cookieStore)
+  } catch {}
+
+  // --- GUARD: Only allow access if user is not nominee, or nominee with 'Family' access ---
+  if (
+    currentRole?.name === "nominee" &&
+    (!currentRole.accessCategories || !currentRole.accessCategories.includes("Family"))
+  ) {
+    redirect("/dashboard")
+  }
+  // -----------------------------------------------------------------------------
 
   const { success, data: members, error } = await getFamilyMembers()
 

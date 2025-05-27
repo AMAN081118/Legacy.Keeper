@@ -14,6 +14,8 @@ import { logoutUser } from "@/app/actions/auth-actions"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { UserCircle } from "lucide-react"
+import { useRole, CurrentRole } from "@/components/dashboard/role-context"
+import { ChevronDown } from "lucide-react"
 
 interface TopBarProps {
   onMobileMenuClick?: () => void
@@ -30,6 +32,7 @@ interface UserRole {
     name: string | null
     email: string | null
   } | null
+  accessCategories?: string[]
 }
 
 export function TopBar({ onMobileMenuClick = () => {}, user }: TopBarProps) {
@@ -37,6 +40,7 @@ export function TopBar({ onMobileMenuClick = () => {}, user }: TopBarProps) {
   const safeUser = user || { name: null, email: null, avatarUrl: null }
   const [userRoles, setUserRoles] = useState<UserRole[]>([])
   const [isLoadingRoles, setIsLoadingRoles] = useState(false)
+  const { currentRole, setCurrentRole } = useRole();
 
   const userInitials = safeUser.name
     ? safeUser.name
@@ -295,6 +299,118 @@ export function TopBar({ onMobileMenuClick = () => {}, user }: TopBarProps) {
     // Don't depend on safeUser.email since it might be null
   }, [])
 
+  // Helper to get role label and related user
+  const getRoleLabel = () => {
+    if (!currentRole) return "Role";
+    if (currentRole.name === "user") return "User";
+    if (currentRole.name === "nominee") return "Nominee For";
+    if (currentRole.name === "trustee") return "Trustee For";
+    return currentRole.name.charAt(0).toUpperCase() + currentRole.name.slice(1);
+  };
+  const getRelatedUserName = () => {
+    if (!currentRole || !currentRole.relatedUser) return null;
+    return currentRole.relatedUser.name || currentRole.relatedUser.email || null;
+  };
+
+  const handleRoleChange = async (role: UserRole) => {
+    console.log('[Debug] Starting role change to:', role);
+    
+    const newRole: CurrentRole = {
+      id: role.name + (role.relatedUser?.email ? `_${role.relatedUser.email}` : ""),
+      name: role.name,
+      relatedUser: role.relatedUser || null
+    };
+    
+    // If changing to nominee, fetch access categories
+    if (role.name === 'nominee' && role.relatedUser) {
+      try {
+        const supabase = createClient();
+        console.log('[Debug] Related user email:', role.relatedUser.email);
+        
+        // Get the current user's email
+        const { data: userData } = await supabase.auth.getUser();
+        const nomineeEmail = userData.user?.email;
+        console.log('[Debug] Current user email:', nomineeEmail);
+        
+        if (!nomineeEmail) {
+          console.error('[Debug] No current user email found');
+          newRole.accessCategories = [];
+        } else {
+          // First get the related user's ID from their email
+          const { data: relatedUserData, error: relatedUserError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', role.relatedUser.email)
+            .single();
+            
+          console.log('[Debug] Related user data:', relatedUserData);
+          console.log('[Debug] Related user error:', relatedUserError);
+            
+          if (relatedUserError || !relatedUserData) {
+            console.error('[Debug] Error fetching related user data:', relatedUserError);
+            newRole.accessCategories = [];
+          } else {
+            console.log('[Debug] Related user ID:', relatedUserData.id);
+            
+            // Query nominees table where:
+            // - email is the current user's email (nominee's email)
+            // - user_id is the related user's ID (the user who added the nominee)
+            const { data: nomineeData, error } = await supabase
+              .from("nominees")
+              .select("access_categories")
+              .eq("email", nomineeEmail)
+              .eq("user_id", relatedUserData.id)
+              .maybeSingle();
+            
+            console.log('[Debug] Nominee query params:', {
+              email: nomineeEmail,
+              user_id: relatedUserData.id
+            });
+            console.log('[Debug] Nominee data:', nomineeData);
+            console.log('[Debug] Nominee error:', error);
+            
+            if (error) {
+              console.error('[Debug] Error fetching nominee data:', error);
+              newRole.accessCategories = [];
+            } else {
+              newRole.accessCategories = nomineeData?.access_categories || [];
+            }
+          }
+        }
+        
+        console.log('[Debug] Set access categories:', newRole.accessCategories);
+      } catch (error) {
+        console.error('[Debug] Error in nominee access categories fetch:', error);
+        newRole.accessCategories = [];
+      }
+    } else if (role.name === 'user') {
+      // For user role, no access restrictions
+      newRole.accessCategories = undefined;
+      console.log('[Debug] User role - no access restrictions');
+    }
+    
+    console.log('[Debug] Final role object:', newRole);
+    
+    // Update client-side state
+    setCurrentRole(newRole);
+    
+    // Update cookie via API
+    const response = await fetch("/api/set-role", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: newRole })
+    });
+    
+    if (!response.ok) {
+      console.error("[Debug] Failed to update role in session");
+      return;
+    }
+    
+    console.log('[Debug] Role updated successfully, reloading page...');
+    // Force reload the page to update server-side context
+    window.location.reload();
+  };
+
   return (
     <div className="flex h-16 items-center px-4 border-b bg-white">
       <div className="flex items-center">
@@ -316,13 +432,19 @@ export function TopBar({ onMobileMenuClick = () => {}, user }: TopBarProps) {
       <div className="flex-1" />
       <div className="flex items-center space-x-4">
         <NotificationDropdown />
-
         {/* Roles Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              <UserCircle className="h-4 w-4" />
-              <span>Roles {userRoles.length > 0 && `(${userRoles.length})`}</span>
+            <Button variant="outline" size="sm" className="flex items-center gap-2 px-3 py-1.5">
+              {/* Pill for role */}
+              <span className="bg-green-100 text-green-700 rounded-full px-3 py-0.5 text-xs font-semibold mr-2">
+                {getRoleLabel()}
+              </span>
+              {/* Related user name if present */}
+              {getRelatedUserName() && (
+                <span className="font-medium text-sm text-gray-800 mr-2">{getRelatedUserName()}</span>
+              )}
+              <ChevronDown className="h-4 w-4 text-gray-500" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end">
@@ -341,45 +463,55 @@ export function TopBar({ onMobileMenuClick = () => {}, user }: TopBarProps) {
               </div>
             ) : (
               <>
-                {userRoles.map((role, index) => (
-                  <div key={index} className="px-2 py-2 hover:bg-accent rounded-sm cursor-default">
-                    <div className="font-medium capitalize flex items-center">
-                      {role.name === 'user' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
-                        </svg>
-                      )}
-                      {role.name === 'nominee' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                          <circle cx="9" cy="7" r="4" />
-                          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                        </svg>
-                      )}
-                      {role.name === 'trustee' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
-                      )}
-                      {role.name}
-                    </div>
-                    {role.relatedUser && role.relatedUser.name && (
-                      <div className="text-xs text-muted-foreground mt-1 ml-5 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="m9 18 6-6-6-6" />
-                        </svg>
-                        <span>
-                          {role.name === 'nominee' ? 'Nominee for' :
-                           role.name === 'trustee' ? 'Trustee for' :
-                           'Related to'}: <span className="font-medium">{role.relatedUser.name || role.relatedUser.email}</span>
-                        </span>
+                {userRoles.map((role, index) => {
+                  const isActive = currentRole &&
+                    role.name === currentRole.name &&
+                    ((role.relatedUser?.email && currentRole.relatedUser?.email && role.relatedUser.email === currentRole.relatedUser.email) ||
+                     (!role.relatedUser && !currentRole.relatedUser));
+                  return (
+                    <div
+                      key={index}
+                      className={`px-2 py-2 rounded-sm cursor-pointer flex items-center ${isActive ? 'bg-accent font-semibold' : 'hover:bg-accent'} `}
+                      onClick={() => handleRoleChange(role)}
+                    >
+                      <div className="font-medium capitalize flex items-center">
+                        {role.name === 'user' && (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                        )}
+                        {role.name === 'nominee' && (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                          </svg>
+                        )}
+                        {role.name === 'trustee' && (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                        )}
+                        {role.name}
                       </div>
-                    )}
-                  </div>
-                ))}
+                      {role.relatedUser && role.relatedUser.name && (
+                        <div className="text-xs text-muted-foreground mt-1 ml-5 flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m9 18 6-6-6-6" />
+                          </svg>
+                          <span>
+                            {role.name === 'nominee' ? 'Nominee for' :
+                              role.name === 'trustee' ? 'Trustee for' :
+                                'Related to'}: <span className="font-medium">{role.relatedUser.name || role.relatedUser.email}</span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
                 <div className="px-2 py-1 mt-2 text-xs text-center text-muted-foreground border-t">
                   {userRoles.length} role{userRoles.length !== 1 ? 's' : ''} found
                 </div>

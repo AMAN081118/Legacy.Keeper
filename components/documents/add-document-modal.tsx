@@ -31,7 +31,6 @@ export function AddDocumentModal({ open, onClose, onAdd, userId }: AddDocumentMo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!title) {
       toast({
         title: "Missing information",
@@ -40,9 +39,15 @@ export function AddDocumentModal({ open, onClose, onAdd, userId }: AddDocumentMo
       })
       return
     }
-
+    if (!file) {
+      toast({
+        title: "Missing file",
+        description: "Please upload a document file.",
+        variant: "destructive",
+      })
+      return
+    }
     setIsSubmitting(true)
-
     try {
       const result = await addDocument({
         userId,
@@ -54,6 +59,7 @@ export function AddDocumentModal({ open, onClose, onAdd, userId }: AddDocumentMo
 
       if (result.success && result.data) {
         onAdd(result.data)
+        onClose()
       } else {
         toast({
           title: "Error",
@@ -116,7 +122,12 @@ export function AddDocumentModal({ open, onClose, onAdd, userId }: AddDocumentMo
             <div className="grid grid-cols-4 items-start gap-4">
               <Label className="text-right pt-2">Attach Documents</Label>
               <div className="col-span-3">
-                <FileUpload onFileSelect={setFile} maxSize={10} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+                <FileUpload
+                  bucket="documents"
+                  onFileChange={setFile}
+                  maxSize={10}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                />
               </div>
             </div>
           </div>

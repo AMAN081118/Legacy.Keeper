@@ -1,14 +1,14 @@
 import { createServerClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
+import { getCurrentRoleFromSession } from "@/app/actions/user-roles"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { SummaryCards } from "@/components/dashboard/summary-cards"
 import { FinancialChart } from "@/components/dashboard/financial-chart"
 import { TransactionsTable } from "@/components/dashboard/transactions-table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { redirect } from "next/navigation"
 import Link from "next/link"
-import { getUserRoles } from "@/app/actions/user-roles"
 
-export default async function Dashboard() {
+export default async function DashboardPage() {
   const supabase = createServerClient()
 
   // Get the current user
@@ -19,6 +19,12 @@ export default async function Dashboard() {
   if (!session) {
     redirect("/")
   }
+
+  // Get current role from session (if available)
+  let currentRole = null
+  try {
+    currentRole = await getCurrentRoleFromSession()
+  } catch {}
 
   // Get user data
   const { data: userData } = await supabase.from("users").select("*").eq("id", session.user.id).single()
@@ -61,10 +67,6 @@ export default async function Dashboard() {
     trustees: trusteesCount,
     nominees: nomineesCount,
   }
-
-  // Print user roles in the terminal for debugging
-  // const userRoles = await getUserRoles(session.user.id)
-  // console.log("User roles for this user:", userRoles)
 
   return (
     <div className="space-y-6">

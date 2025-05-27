@@ -1,148 +1,57 @@
-"use client"
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
+import { getCurrentRoleFromSession } from "@/app/actions/user-roles";
+import { redirect } from "next/navigation";
+import { getDepositsInvestments, getDepositsInvestmentsStats } from "@/app/actions/deposits-investments";
+import DepositsInvestmentsClient from "@/components/deposits-investments/deposits-investments-client";
 
-import { useEffect, useState } from "react"
-import { DepositsInvestmentsHeader } from "@/components/deposits-investments/deposits-investments-header"
-import { DepositsInvestmentsTabs } from "@/components/deposits-investments/deposits-investments-tabs"
-import { DepositsInvestmentsTable } from "@/components/deposits-investments/deposits-investments-table"
-import { DepositsInvestmentsFilter } from "@/components/deposits-investments/deposits-investments-filter"
-import { getDepositsInvestments, getDepositsInvestmentsStats } from "@/app/actions/deposits-investments"
-import type { DepositInvestment } from "@/lib/supabase/database.types"
-import { Toaster } from "@/components/ui/toaster"
-import { useToast } from "@/components/ui/use-toast"
+export default async function DepositsInvestmentsPage() {
+  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = cookies();
 
-export default function DepositsInvestmentsPage() {
-  const [depositsInvestments, setDepositsInvestments] = useState<DepositInvestment[]>([])
-  const [filteredDepositsInvestments, setFilteredDepositsInvestments] = useState<DepositInvestment[]>([])
-  const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState({ totalAmount: 0, count: 0 })
-  const [activeTab, setActiveTab] = useState<string>("All")
-  const [searchQuery, setSearchQuery] = useState("")
-  const { toast } = useToast()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        const [depositsResponse, statsResponse] = await Promise.all([
-          getDepositsInvestments(),
-          getDepositsInvestmentsStats(),
-        ])
-
-        if (depositsResponse.success && depositsResponse.data) {
-          setDepositsInvestments(depositsResponse.data)
-          setFilteredDepositsInvestments(depositsResponse.data)
-        } else {
-          toast({
-            title: "Error",
-            description: depositsResponse.error || "Failed to fetch deposits and investments",
-            variant: "destructive",
-          })
-        }
-
-        if (statsResponse.success && statsResponse.data) {
-          setStats(statsResponse.data)
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error)
-        toast({
-          title: "Error",
-          description: "Failed to fetch data",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [toast])
-
-  useEffect(() => {
-    let filtered = [...depositsInvestments]
-
-    // Filter by tab
-    if (activeTab !== "All") {
-      filtered = filtered.filter((item) => {
-        if (activeTab === "Bank") return item.investment_type === "Bank"
-        if (activeTab === "Gold/Silver") return ["Gold", "Silver"].includes(item.investment_type)
-        if (activeTab === "Shares/Bond") return ["Shares", "Bond"].includes(item.investment_type)
-        if (activeTab === "Property") return item.investment_type === "Property"
-        if (activeTab === "Digital Asset") return item.investment_type === "DigitalAsset"
-        if (activeTab === "Others") return item.investment_type === "Other"
-        return true
-      })
-    }
-
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(
-        (item) =>
-          item.name.toLowerCase().includes(query) ||
-          item.description?.toLowerCase().includes(query) ||
-          item.paid_to?.toLowerCase().includes(query),
-      )
-    }
-
-    setFilteredDepositsInvestments(filtered)
-  }, [depositsInvestments, activeTab, searchQuery])
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab)
+  if (!session) {
+    redirect("/");
   }
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query)
+  // Get current role from session (if available)
+  let currentRole = null;
+  try {
+    currentRole = await getCurrentRoleFromSession(cookieStore);
+  } catch {}
+
+  // --- GUARD: Only allow access if user is not nominee, or nominee with 'Finance' access ---
+  if (
+    currentRole?.name === "nominee" &&
+    (!currentRole.accessCategories || !currentRole.accessCategories.includes("Finance"))
+  ) {
+    redirect("/dashboard");
+  }
+  // -----------------------------------------------------------------------------
+
+  // Determine the correct userId to fetch data for
+  let userId = session.user.id;
+  if (currentRole?.name === "nominee" && currentRole.relatedUser?.email) {
+    const { data: relatedUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", currentRole.relatedUser.email)
+      .single();
+    if (relatedUser?.id) userId = relatedUser.id;
   }
 
-  const handleRefresh = async () => {
-    setLoading(true)
-    try {
-      const [depositsResponse, statsResponse] = await Promise.all([
-        getDepositsInvestments(),
-        getDepositsInvestmentsStats(),
-      ])
-
-      if (depositsResponse.success && depositsResponse.data) {
-        setDepositsInvestments(depositsResponse.data)
-      } else {
-        toast({
-          title: "Error",
-          description: depositsResponse.error || "Failed to refresh data",
-          variant: "destructive",
-        })
-      }
-
-      if (statsResponse.success && statsResponse.data) {
-        setStats(statsResponse.data)
-      }
-    } catch (error) {
-      console.error("Error refreshing data:", error)
-      toast({
-        title: "Error",
-        description: "Failed to refresh data",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Fetch data for the correct user
+  const depositsResponse = await getDepositsInvestments(userId);
+  const statsResponse = await getDepositsInvestmentsStats(userId);
 
   return (
-    <div className="space-y-6">
-      <DepositsInvestmentsHeader totalAmount={stats.totalAmount} count={stats.count} onRefresh={handleRefresh} />
-
-      <DepositsInvestmentsTabs activeTab={activeTab} onTabChange={handleTabChange} />
-
-      <DepositsInvestmentsFilter onSearch={handleSearch} />
-
-      <DepositsInvestmentsTable
-        depositsInvestments={filteredDepositsInvestments}
-        loading={loading}
-        onRefresh={handleRefresh}
-      />
-
-      <Toaster />
-    </div>
-  )
+    <DepositsInvestmentsClient
+      initialDeposits={depositsResponse.success ? depositsResponse.data : []}
+      initialStats={statsResponse.success ? statsResponse.data : { totalAmount: 0, count: 0 }}
+      userId={userId}
+    />
+  );
 }

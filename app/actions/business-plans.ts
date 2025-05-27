@@ -6,39 +6,32 @@ import { revalidatePath } from "next/cache"
 import { v4 as uuidv4 } from "uuid"
 import { uploadFile } from "./upload"
 
-export async function getBusinessPlans() {
+export async function getBusinessPlans(sessionUserId?: string, currentRole?: { name: string, relatedUser?: { email: string | null } | null }) {
   const supabase = createServerClient()
 
-  const { data: session, error: sessionError } = await supabase.auth.getSession()
-  if (sessionError || !session.session?.user) {
-    console.error("Error fetching session:", sessionError)
-    return { error: "Not authenticated", data: null }
+  let userId = sessionUserId
+
+  if (!userId) {
+    const { data: session, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError || !session.session?.user) {
+      console.error("Error fetching session:", sessionError)
+      return { error: "Not authenticated", data: null }
+    }
+    userId = session.session.user.id
   }
 
-  const userId = session.session.user.id
-
-  // Check if user is a nominee and get related_user_id if so
-  const { data: userRoleRows, error: userRoleError } = await supabase
-    .from("user_roles")
-    .select("role_id, related_user_id, roles(name)")
-    .eq("user_id", userId)
-
-  if (userRoleError) {
-    console.error("Error fetching user roles:", userRoleError)
-    return { error: userRoleError.message, data: null }
+  // If currentRole is nominee, get related user's id by email
+  if (currentRole?.name === "nominee" && currentRole.relatedUser?.email) {
+    const { data: user } = await supabase.from("users").select("id").eq("email", currentRole.relatedUser.email).single()
+    if (user?.id) userId = user.id
   }
 
-  // Find nominee role if present
-  const nomineeRole = userRoleRows?.find((row: any) => row.roles?.name === "nominee")
-  let plansUserId = userId
-  if (nomineeRole && nomineeRole.related_user_id) {
-    plansUserId = nomineeRole.related_user_id
-  }
+  console.log("[BusinessPlans] Current session role:", currentRole);
 
   const { data, error } = await supabase
     .from("business_plans")
     .select("*")
-    .eq("user_id", plansUserId)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false })
 
   if (error) {

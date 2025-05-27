@@ -116,21 +116,22 @@ export async function updateHealthCondition(formData: FormData) {
     const id = formData.get("id") as string
     const healthRecordId = formData.get("health_record_id") as string
     const conditionName = formData.get("condition_name") as string
-    const diagnosedDate = formData.get("diagnosed_date") as string
-    const description = formData.get("description") as string
-    const treatment = formData.get("treatment") as string
+    const doctorName = formData.get("doctor_name") as string | null
+    const visitDate = formData.get("visit_date") as string | null
+    const description = formData.get("description") as string | null
+    const attachmentUrl = formData.get("attachment_url") as string | null
 
     // Update the health condition
     const { data, error } = await supabase
       .from("health_conditions")
       .update({
         condition_name: conditionName,
-        diagnosed_date: diagnosedDate,
+        doctor_name: doctorName,
+        visit_date: visitDate,
         description: description,
-        treatment: treatment,
+        attachment_url: attachmentUrl,
       })
       .eq("id", id)
-      .eq("user_id", user.id)
       .select()
 
     if (error) {

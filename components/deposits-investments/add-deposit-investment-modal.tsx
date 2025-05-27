@@ -18,6 +18,7 @@ import { FileUpload } from "@/components/file-upload"
 import { addDepositInvestment } from "@/app/actions/deposits-investments"
 import { useToast } from "@/components/ui/use-toast"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { createClient } from "@/lib/supabase/client"
 
 interface AddDepositInvestmentModalProps {
   isOpen: boolean
@@ -281,7 +282,7 @@ export function AddDepositInvestmentModal({ isOpen, onClose, onSuccess }: AddDep
           <div className="space-y-2">
             <Label>Attachment</Label>
             <FileUpload
-              onFileSelect={(file) => setAttachment(file)}
+              onFileChange={(file) => setAttachment(file)}
               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
               maxSize={5 * 1024 * 1024} // 5MB
             />

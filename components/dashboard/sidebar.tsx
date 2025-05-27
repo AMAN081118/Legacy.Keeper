@@ -166,12 +166,51 @@ export function Sidebar() {
 
   // Helper: check if a link is allowed
   const isLinkAllowed = (link: any) => {
-    if (link.title === "Dashboard") return true;
-    if (!currentRole || currentRole.name === "user" || !currentRole.accessCategories) return true;
-    // If accessCategories contains a group, allow all links in that group
-    if (link.group && currentRole.accessCategories.includes(link.group)) return true;
-    // If accessCategories contains the link title, allow this link
-    if (currentRole.accessCategories.includes(link.title)) return true;
+    console.log("[Debug] Checking access for link:", {
+      title: link.title,
+      group: link.group,
+      currentRole: currentRole?.name,
+      accessCategories: currentRole?.accessCategories
+    });
+    
+    // Always allow Dashboard and Logout
+    if (link.title === "Dashboard" || link.title === "Logout") {
+      console.log("[Debug] Always allowed:", link.title);
+      return true;
+    }
+    
+    // If no role or user role, allow everything
+    if (!currentRole || currentRole.name === "user") {
+      console.log("[Debug] No role or user role - allowing access");
+      return true;
+    }
+    
+    // For nominee role
+    if (currentRole.name === "nominee") {
+      // If no access categories defined, deny access
+      if (!currentRole.accessCategories || currentRole.accessCategories.length === 0) {
+        console.log("[Debug] Nominee role but no access categories defined");
+        return false;
+      }
+      
+      // Check if the link's group is in access categories
+      if (link.group && currentRole.accessCategories.includes(link.group)) {
+        console.log("[Debug] Access granted through group:", link.group);
+        return true;
+      }
+      
+      // Check if the link's title is in access categories
+      if (currentRole.accessCategories.includes(link.title)) {
+        console.log("[Debug] Access granted through title:", link.title);
+        return true;
+      }
+      
+      console.log("[Debug] Access denied - no matching category found");
+      return false;
+    }
+    
+    // Default deny for unknown roles
+    console.log("[Debug] Unknown role type - denying access");
     return false;
   };
 

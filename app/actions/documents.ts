@@ -3,6 +3,7 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { v4 as uuidv4 } from "uuid"
+import { uploadFile } from "@/app/actions/upload"
 import { ensureBucketExists } from "@/lib/supabase/ensure-bucket"
 
 export async function addDocument({
@@ -20,35 +21,27 @@ export async function addDocument({
 }) {
   try {
     const supabase = createServerClient()
-
-    // Create a new document record
     const documentId = uuidv4()
     let attachmentUrl = null
 
     // If there's a file, upload it
     if (file) {
-      // Ensure the bucket exists
-      await ensureBucketExists("documents")
-
+      // Assume the bucket already exists
       // Generate a unique file path
       const fileExt = file.name.split(".").pop()
       const filePath = `${userId}/${documentId}.${fileExt}`
 
-      // Upload the file
-      const { error: uploadError, data } = await supabase.storage.from("documents").upload(filePath, file, {
-        upsert: true,
-      })
+      // Convert file to ArrayBuffer for server upload
+      const arrayBuffer = await file.arrayBuffer()
 
-      if (uploadError) {
-        throw new Error(`Error uploading file: ${uploadError.message}`)
+      // Upload the file
+      const result = await uploadFile("documents", filePath, arrayBuffer, file.type)
+
+      if (!result.success || !result.url) {
+        throw new Error(result.error || "Failed to upload file")
       }
 
-      // Get the public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("documents").getPublicUrl(filePath)
-
-      attachmentUrl = publicUrl
+      attachmentUrl = result.url
     }
 
     // Insert the document record
@@ -162,25 +155,33 @@ export async function updateDocument({
 
 export async function deleteDocument({ id }: { id: string }) {
   try {
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(id)) {
+      return { success: false, error: "Invalid document ID format" }
+    }
+
     const supabase = createServerClient()
 
     // Get the document to get the file path
     const { data: document, error: fetchError } = await supabase.from("documents").select("*").eq("id", id).single()
 
     if (fetchError) {
-      throw new Error(`Error fetching document: ${fetchError.message}`)
+      return { success: false, error: "Document not found" }
     }
 
     // If there's an attachment, delete it
     if (document.attachment_url) {
       const filePath = document.attachment_url.split("/").pop()
-      const { error: deleteFileError } = await supabase.storage
-        .from("documents")
-        .remove([`${document.user_id}/${filePath}`])
+      if (filePath) {
+        const { error: deleteFileError } = await supabase.storage
+          .from("documents")
+          .remove([`${document.user_id}/${filePath}`])
 
-      if (deleteFileError) {
-        console.error(`Error deleting file: ${deleteFileError.message}`)
-        // Continue with deletion even if file removal fails
+        if (deleteFileError) {
+          console.error(`Error deleting file: ${deleteFileError.message}`)
+          // Continue with deletion even if file removal fails
+        }
       }
     }
 
@@ -188,13 +189,13 @@ export async function deleteDocument({ id }: { id: string }) {
     const { error } = await supabase.from("documents").delete().eq("id", id)
 
     if (error) {
-      throw new Error(`Error deleting document: ${error.message}`)
+      return { success: false, error: "Failed to delete document" }
     }
 
     revalidatePath("/dashboard/documents")
     return { success: true }
   } catch (error) {
     console.error("Error deleting document:", error)
-    return { success: false, error: (error as Error).message }
+    return { success: false, error: "An unexpected error occurred while deleting the document" }
   }
 }
