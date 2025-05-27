@@ -21,6 +21,7 @@ import {
   UserPlus,
 } from "lucide-react"
 import { useRole } from "@/components/dashboard/role-context"
+import { logoutUser } from "@/app/actions/auth-actions"
 
 const sidebarLinks = [
   {
@@ -217,6 +218,21 @@ export function Sidebar() {
   // Helper: render a sidebar link (enabled or disabled)
   const renderSidebarLink = (link: any, idx: number) => {
     const allowed = isLinkAllowed(link);
+    if (link.title === "Logout" && allowed) {
+      return (
+        <form key={link.href || idx} action={logoutUser} className="w-full">
+          <button
+            type="submit"
+            className={cn(
+              "flex items-center rounded-md px-3 py-2 text-sm font-medium w-full text-left text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+            )}
+          >
+            <link.icon className="mr-2 h-4 w-4" />
+            {link.title}
+          </button>
+        </form>
+      );
+    }
     if (allowed) {
       return (
         <Link

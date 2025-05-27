@@ -3,11 +3,12 @@ import { cookies } from "next/headers"
 import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import Link from "next/link"
-import { ChevronRight, Edit, Trash } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ChevronRight, PlusCircle } from "lucide-react"
 import { AddHealthConditionModal } from "@/components/health-records/add-health-condition-modal"
 import { getHealthConditions } from "@/app/actions/health-conditions"
 import { EditHealthConditionModal } from "@/components/health-records/edit-health-condition-modal"
+import { ProfileEditButton } from "@/components/health-records/profile-edit-button"
+import { HealthConditionActions } from "@/components/health-records/health-condition-actions"
 
 export default async function HealthRecordDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerComponentClient({ cookies })
@@ -46,14 +47,7 @@ export default async function HealthRecordDetailPage({ params }: { params: { id:
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Profile Details</h2>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Edit className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button variant="outline" size="sm" className="flex items-center gap-1 text-red-600 hover:text-red-700">
-            <Trash className="h-4 w-4" />
-            Delete
-          </Button>
+          <ProfileEditButton record={record} />
         </div>
       </div>
 
@@ -89,48 +83,49 @@ export default async function HealthRecordDetailPage({ params }: { params: { id:
             </div>
             <div>
               <p className="text-sm text-gray-500">Secondary Contact</p>
-              <p className="font-medium">{record.secondary_contact || "N/A"}</p>
+              <p className="font-medium">{record.emergency_contact || "N/A"}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Health Conditions */}
-      <div>
-        <h2 className="text-xl font-semibold">Health Conditions({healthConditions?.length || 0})</h2>
-        <div className="bg-white rounded-lg border p-6 mt-4">
-          {healthConditions && healthConditions.length > 0 ? (
-            <div className="space-y-4">
-              {healthConditions.map((condition) => (
-                <div key={condition.id} className="border rounded-lg p-4">
-                  <h3 className="font-medium">{condition.condition_name}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{condition.description || "No description provided"}</p>
-                  <div className="flex justify-between mt-2">
-                    <p className="text-xs text-gray-500">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-lg font-semibold">Health Conditions</h2>
+        <AddHealthConditionModal healthRecordId={record.id} triggerButton={
+          <button className="flex items-center gap-2 px-3 py-1 bg-[#0a2642] text-white rounded hover:bg-[#0a2642]/90">
+            <PlusCircle className="w-4 h-4" /> Add Health Condition
+          </button>
+        } />
+      </div>
+      <div className="bg-white rounded-lg border p-6 mt-4">
+        {healthConditions && healthConditions.length > 0 ? (
+          <div className="space-y-4">
+            {healthConditions.map((condition) => (
+              <div key={condition.id} className="border rounded-lg p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-medium">{condition.condition_name}</h3>
+                    <p className="text-sm text-gray-600 mt-1">{condition.description || "No description provided"}</p>
+                    <p className="text-xs text-gray-500 mt-2">
                       {condition.doctor_name ? `Dr. ${condition.doctor_name}` : "No doctor specified"}
                       {condition.visit_date ? ` • ${formatDate(condition.visit_date)}` : ""}
                     </p>
-                    <div className="flex gap-2">
-                      <EditHealthConditionModal
-                        condition={condition}
-                        trigger={<button className="text-xs text-blue-600 hover:text-blue-800">Edit</button>}
-                      />
-                      <button className="text-xs text-red-600 hover:text-red-800">Delete</button>
-                    </div>
                   </div>
+                  <HealthConditionActions condition={condition} />
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="text-center mb-6">
-                <img src="/placeholder-uvtex.png" alt="No health conditions" className="mx-auto h-30 w-30" />
-                <p className="mt-4 text-gray-500">No Health Conditions Found</p>
               </div>
-              <AddHealthConditionModal healthRecordId={params.id} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="text-center mb-6">
+              <img src="/placeholder-uvtex.png" alt="No health conditions" className="mx-auto h-30 w-30" />
+              <p className="mt-4 text-gray-500">No Health Conditions Found</p>
             </div>
-          )}
-        </div>
+            <AddHealthConditionModal healthRecordId={params.id} />
+          </div>
+        )}
       </div>
     </div>
   )

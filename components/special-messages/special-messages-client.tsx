@@ -8,16 +8,30 @@ import { MessageCard } from "./message-card"
 import { EmptyState } from "./empty-state"
 import { getSpecialMessages, deleteSpecialMessage } from "@/app/actions/special-messages"
 import { useToast } from "@/components/ui/use-toast"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export function SpecialMessagesClient() {
   const [messages, setMessages] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState("5")
   const { toast } = useToast()
 
   useEffect(() => {
     fetchMessages()
   }, [])
+
+  // Pagination logic
+  const totalPages = Math.ceil(messages.length / Number(itemsPerPage))
+  const startIndex = (currentPage - 1) * Number(itemsPerPage)
+  const endIndex = startIndex + Number(itemsPerPage)
+  const currentMessages = messages.slice(startIndex, endIndex)
+
+  // Reset to first page when itemsPerPage changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [itemsPerPage])
 
   const fetchMessages = async () => {
     setIsLoading(true)
@@ -94,11 +108,64 @@ export function SpecialMessagesClient() {
       ) : messages.length === 0 ? (
         <EmptyState onCreateMessage={() => setIsCreateModalOpen(true)} />
       ) : (
-        <div className="grid grid-cols-1 gap-6">
-          {messages.map((message) => (
-            <MessageCard key={message.id} message={message} onDelete={() => handleDeleteMessage(message.id)} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-6">
+            {currentMessages.map((message) => (
+              <MessageCard key={message.id} message={message} onDelete={() => handleDeleteMessage(message.id)} />
+            ))}
+          </div>
+          {/* Pagination Controls */}
+          <div className="flex flex-col items-center justify-between gap-4 border-t px-4 py-4 sm:flex-row mt-6">
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-gray-500">
+                Showing {startIndex + 1} to {Math.min(endIndex, messages.length)} of {messages.length} entries
+              </p>
+              <Select value={itemsPerPage} onValueChange={setItemsPerPage}>
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue placeholder="5" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                const pageNumber = i + 1
+                return (
+                  <Button
+                    key={i}
+                    variant={currentPage === pageNumber ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(pageNumber)}
+                  >
+                    {pageNumber}
+                  </Button>
+                )
+              })}
+              {totalPages > 5 && <span>...</span>}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </>
       )}
 
       <CreateMessageModal

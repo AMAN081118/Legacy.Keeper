@@ -2,7 +2,7 @@
 
 import { createServerClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
-import { ensureBucketExists } from "@/lib/supabase/ensure-bucket"
+import { ensureSpecialMessageBucket } from "./create-special-message-bucket"
 
 export async function getSpecialMessages() {
   const supabase = createServerClient()
@@ -25,33 +25,49 @@ export async function getSpecialMessages() {
     return { error: error.message, data: null }
   }
 
+  // Fetch all users for recipient mapping
+  const { data: allUsers, error: usersError } = await supabase.from("users").select("id, name, email")
+  if (usersError) {
+    console.error("Error fetching users:", usersError)
+    return messages // Return messages without user details
+  }
+
   // If we have messages, fetch the sender details for each message
   if (messages && messages.length > 0) {
     // Get unique sender IDs
     const senderIds = [...new Set(messages.map((message) => message.sender_id))]
 
     // Fetch user details for all senders
-    const { data: users, error: usersError } = await supabase
+    const { data: senders, error: sendersError } = await supabase
       .from("users")
       .select("id, name, email")
       .in("id", senderIds)
 
-    if (usersError) {
-      console.error("Error fetching users:", usersError)
+    if (sendersError) {
+      console.error("Error fetching senders:", sendersError)
       return messages // Return messages without user details
     }
 
     // Create a map of user IDs to user details
-    const userMap = users.reduce((acc, user) => {
+    const senderMap: Record<string, any> = senders.reduce((acc: Record<string, any>, user: any) => {
       acc[user.id] = user
       return acc
     }, {})
 
-    // Attach user details to each message
-    const messagesWithUsers = messages.map((message) => ({
-      ...message,
-      sender: userMap[message.sender_id] || null,
-    }))
+    // Attach sender and recipient details to each message
+    const messagesWithUsers = messages.map((message: any) => {
+      let recipients = []
+      if (message.is_for_all) {
+        recipients = allUsers
+      } else if (Array.isArray(message.recipient_ids)) {
+        recipients = allUsers.filter((u: any) => message.recipient_ids.includes(u.id))
+      }
+      return {
+        ...message,
+        sender: senderMap[message.sender_id] || null,
+        recipients,
+      }
+    })
 
     return messagesWithUsers
   }
@@ -100,7 +116,7 @@ export async function createSpecialMessage(formData: FormData) {
   // Handle file upload if present
   if (file && file.size > 0) {
     // Ensure bucket exists
-    const bucketExists = await ensureBucketExists("user_documents")
+    const bucketExists = await ensureSpecialMessageBucket();
     if (!bucketExists) {
       return { success: false, error: "Storage bucket not available" }
     }
@@ -109,7 +125,7 @@ export async function createSpecialMessage(formData: FormData) {
     const fileName = `special_messages/${user.id}/${Date.now()}.${fileExt}`
 
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("user_documents")
+      .from("special-message-document")
       .upload(fileName, file, {
         cacheControl: "3600",
         upsert: false,
@@ -121,7 +137,7 @@ export async function createSpecialMessage(formData: FormData) {
     }
 
     // Get public URL
-    const { data: urlData } = await supabase.storage.from("user_documents").getPublicUrl(fileName)
+    const { data: urlData } = await supabase.storage.from("special-message-document").getPublicUrl(fileName)
 
     attachmentUrl = urlData.publicUrl
   }
@@ -175,7 +191,7 @@ export async function deleteSpecialMessage(id: string) {
     const filePath = message.attachment_url.split("/").slice(-2).join("/")
     if (filePath) {
       const { error: storageError } = await supabase.storage
-        .from("user_documents")
+        .from("special-message-document")
         .remove([`special_messages/${filePath}`])
 
       if (storageError) {

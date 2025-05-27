@@ -30,88 +30,19 @@ export async function getNotifications(): Promise<Notification[]> {
       throw new Error("User not authenticated");
     }
 
-    await getReceivedNomineeRequests();
-
-    const notifications: Notification[] = [];
-
-    // 1. Get pending nominees where the current user is the inviter (sent invitations)
-    const { data: sentNominees, error: sentNomineesError } = await supabase
-      .from("nominees")
+    // Fetch notifications for the current user
+    const { data: notifications, error } = await supabase
+      .from("notifications")
       .select("*")
       .eq("user_id", user.user.id)
-      .eq("status", "pending")
-      .order("invitation_sent_at", { ascending: false });
+      .order("created_at", { ascending: false });
 
-    if (!sentNomineesError && sentNominees) {
-      // Format sent nominees as notifications
-      const sentNotifications: Notification[] = sentNominees.map((nominee) => ({
-        id: `sent_${nominee.id}`,
-        title: "Pending Invitation",
-        message: `Invitation to ${nominee.name} (${nominee.email}) is pending a response.`,
-        type: "invitation_sent",
-        createdAt: nominee.invitation_sent_at || nominee.created_at,
-        read: false,
-        data: {
-          nomineeId: nominee.id,
-        },
-      }));
-
-      notifications.push(...sentNotifications);
+    if (error) {
+      console.error("Error fetching notifications:", error);
+      return [];
     }
 
-    // 2. Get pending nominees where the current user is the nominee (received invitations)
-    const email = user.user.email || "";
-    const { data: receivedNominees, error: receivedNomineesError } = await supabase
-      .from("nominees")
-      .select("*");
-    const { data: allNominees } = await supabase
-      .from("nominees")
-      .select("*");
-
-    if (!receivedNomineesError && receivedNominees && receivedNominees.length > 0) {
-      // Fetch user details for each inviter
-      const inviterIds = receivedNominees.map((nominee) => nominee.user_id);
-      const { data: inviters } = await supabase
-        .from("users")
-        .select("id, name, email")
-        .in("id", inviterIds);
-
-      // Create a map of inviter details for quick lookup
-      const inviterMap = new Map();
-      if (inviters) {
-        inviters.forEach((inviter) => {
-          inviterMap.set(inviter.id, inviter);
-        });
-      }
-
-      // Format received nominees as notifications
-      const receivedNotifications: Notification[] = receivedNominees.map((nominee) => {
-        const inviter = inviterMap.get(nominee.user_id);
-
-        return {
-          id: `received_${nominee.id}`,
-          title: "Nominee Request",
-          message: `You have been nominated by ${inviter?.name || inviter?.email || "a user"}.`,
-          type: "invitation_received",
-          createdAt: nominee.invitation_sent_at || nominee.created_at,
-          read: false,
-          data: {
-            nomineeId: nominee.id,
-            inviterId: nominee.user_id,
-            inviterName: inviter?.name || inviter?.email,
-            invitationToken: nominee.invitation_token,
-            onboardingUrl: `/nominee-onboarding/status?token=${encodeURIComponent(nominee.invitation_token)}`,
-          },
-        };
-      });
-
-      notifications.push(...receivedNotifications);
-    }
-
-    // Sort all notifications by date (newest first)
-    return notifications.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return notifications || [];
   } catch (error) {
     return [];
   }
@@ -136,5 +67,38 @@ export async function getReceivedNomineeRequests() {
     return receivedNominees;
   } catch (error) {
     return [];
+  }
+}
+
+export async function markAllNotificationsRead() {
+  try {
+    const supabase = createServerClient();
+    const { data: user, error: userError } = await supabase.auth.getUser();
+    if (userError || !user.user) return;
+
+    await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("user_id", user.user.id)
+      .eq("read", false);
+  } catch (error) {
+    // handle error
+  }
+}
+
+export async function deleteNotification(id: string) {
+  try {
+    const supabase = createServerClient();
+    const { data: user, error: userError } = await supabase.auth.getUser();
+    if (userError || !user.user) return { success: false };
+    const { error } = await supabase
+      .from("notifications")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.user.id);
+    if (error) return { success: false };
+    return { success: true };
+  } catch (error) {
+    return { success: false };
   }
 }

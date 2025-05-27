@@ -1,21 +1,73 @@
-import { createServerClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
+"use client"
+
+import { useEffect, useState } from "react"
+import { Pencil, Check, X } from "lucide-react"
 import { FileUpload } from "@/components/file-upload"
+import { Button } from "@/components/ui/button"
+import { createClient } from "@/lib/supabase/client"
 
-export default async function ProfilePage() {
-  const supabase = createServerClient()
+const editableFields = [
+  { key: "name", label: "Name", type: "text" },
+  { key: "phone", label: "Phone", type: "text" },
+  { key: "dob", label: "Date of Birth", type: "date" },
+  { key: "gender", label: "Gender", type: "select", options: ["Male", "Female", "Other"] },
+]
 
-  // Get the current user
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+export default function ProfilePage() {
+  const [userData, setUserData] = useState<any>(null)
+  const [editingField, setEditingField] = useState<string | null>(null)
+  const [fieldValue, setFieldValue] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  if (!session) {
-    redirect("/")
+  useEffect(() => {
+    const fetchUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from("users").select("*").eq("id", user.id).single()
+      setUserData(data)
+    }
+    fetchUser()
+  }, [])
+
+  const handleEdit = (key: string) => {
+    setEditingField(key)
+    setFieldValue(userData?.[key] || "")
+    setError("")
   }
 
-  // Get user data
-  const { data: userData } = await supabase.from("users").select("*").eq("id", session.user.id).single()
+  const handleCancel = () => {
+    setEditingField(null)
+    setFieldValue("")
+    setError("")
+  }
+
+  const handleSave = async (key: string) => {
+    setLoading(true)
+    setError("")
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setError("Not authenticated")
+      setLoading(false)
+      return
+    }
+    const updates: any = { [key]: fieldValue, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from("users").update(updates).eq("id", user.id)
+    if (error) {
+      setError("Failed to update. Please try again.")
+    } else {
+      setUserData((prev: any) => ({ ...prev, [key]: fieldValue }))
+      setEditingField(null)
+      setFieldValue("")
+    }
+    setLoading(false)
+  }
+
+  if (!userData) {
+    return <div className="p-8 text-center text-gray-500">Loading profile...</div>
+  }
 
   return (
     <div className="space-y-6">
@@ -24,38 +76,75 @@ export default async function ProfilePage() {
         <p className="text-sm text-gray-500">Manage your account information</p>
       </div>
 
-      <div className="rounded-lg border bg-white p-6">
+      <div className="rounded-lg border bg-white p-6 max-w-xl mx-auto">
         <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Name</p>
-              <p className="mt-1">{userData?.name}</p>
-            </div>
+          {/* Email (read-only) */}
+          <div className="flex items-center justify-between border-b pb-4">
             <div>
               <p className="text-sm font-medium text-gray-500">Email</p>
-              <p className="mt-1">{userData?.email}</p>
+              <p className="mt-1 font-medium">{userData.email}</p>
             </div>
+            <span className="text-xs text-gray-400">(cannot edit)</span>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Phone</p>
-              <p className="mt-1">{userData?.phone || "Not provided"}</p>
+          {/* Editable fields */}
+          {editableFields.map((field) => (
+            <div key={field.key} className="flex items-center justify-between border-b pb-4">
+              <div>
+                <p className="text-sm font-medium text-gray-500">{field.label}</p>
+                {editingField === field.key ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    {field.type === "select" ? (
+                      <select
+                        className="border rounded px-2 py-1"
+                        value={fieldValue}
+                        onChange={e => setFieldValue(e.target.value)}
+                        disabled={loading}
+                      >
+                        <option value="">Select</option>
+                        {field.options?.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type={field.type}
+                        className="border rounded px-2 py-1"
+                        value={fieldValue}
+                        onChange={e => setFieldValue(e.target.value)}
+                        disabled={loading}
+                      />
+                    )}
+                    <Button size="icon" variant="ghost" onClick={() => handleSave(field.key)} disabled={loading}>
+                      <Check className="h-4 w-4 text-green-600" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={handleCancel} disabled={loading}>
+                      <X className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="mt-1 font-medium">{userData[field.key] || "Not provided"}</p>
+                )}
+                {editingField === field.key && error && (
+                  <p className="text-xs text-red-500 mt-1">{error}</p>
+                )}
+              </div>
+              {editingField !== field.key && (
+                <button
+                  className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm"
+                  onClick={() => handleEdit(field.key)}
+                  disabled={loading}
+                >
+                  <Pencil className="h-4 w-4" /> Edit
+                </button>
+              )}
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">Date of Birth</p>
-              <p className="mt-1">{userData?.dob || "Not provided"}</p>
-            </div>
-          </div>
+          ))}
 
-          <div>
-            <p className="text-sm font-medium text-gray-500">Gender</p>
-            <p className="mt-1">{userData?.gender || "Not provided"}</p>
-          </div>
-
-          <div className="border-t pt-4">
+          {/* Government ID */}
+          <div className="pt-4">
             <h2 className="text-lg font-medium">Government ID</h2>
-            {userData?.government_id_url ? (
+            {userData.government_id_url ? (
               <div className="mt-2">
                 <p className="text-sm text-gray-500">Your government ID has been uploaded.</p>
                 <img
@@ -67,7 +156,30 @@ export default async function ProfilePage() {
             ) : (
               <div className="mt-2">
                 <p className="text-sm text-gray-500 mb-4">Please upload your government ID to complete your profile.</p>
-                <FileUpload userId={session.user.id} />
+                <FileUpload 
+                  onUploadComplete={async (url) => {
+                    setLoading(true)
+                    setError("")
+                    const supabase = createClient()
+                    const { data: { user } } = await supabase.auth.getUser()
+                    if (!user) {
+                      setError("Not authenticated")
+                      setLoading(false)
+                      return
+                    }
+                    const updates: any = { government_id_url: url, updated_at: new Date().toISOString() }
+                    const { error } = await supabase.from("users").update(updates).eq("id", user.id)
+                    if (error) {
+                      setError("Failed to update government ID. Please try again.")
+                    } else {
+                      setUserData((prev: any) => ({ ...prev, government_id_url: url }))
+                    }
+                    setLoading(false)
+                  }}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  bucket="user_documents"
+                />
+                {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
               </div>
             )}
           </div>

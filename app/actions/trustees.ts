@@ -124,6 +124,24 @@ export async function addTrustee(formData: FormData) {
       return { error: "Failed to add trustee" }
     }
 
+    // Create notification for trustee if user exists
+    const { data: trusteeUser, error: trusteeUserError } = await adminClient
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .single()
+    if (!trusteeUserError && trusteeUser) {
+      // Generate invitation link (example: /trustee-onboarding?token=...)
+      const invitationLink = `/trustee-onboarding?email=${encodeURIComponent(email)}`
+      await adminClient.from("notifications").insert({
+        user_id: trusteeUser.id,
+        title: "Trustee Invitation",
+        message: `${user.user_metadata?.name || user.email} has invited you to be their trustee.`,
+        type: "invitation_received",
+        data: { invitationLink },
+      })
+    }
+
     revalidatePath("/dashboard/trustees")
     revalidatePath("/dashboard")
 

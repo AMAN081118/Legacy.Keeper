@@ -13,7 +13,7 @@ import { NotificationDropdown } from "./notification-dropdown"
 import { logoutUser } from "@/app/actions/auth-actions"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { UserCircle } from "lucide-react"
+import { UserCircle, User, Lock, CreditCard, Home, LogOut } from "lucide-react"
 import { useRole, CurrentRole } from "@/components/dashboard/role-context"
 import { ChevronDown } from "lucide-react"
 
@@ -523,31 +523,42 @@ export function TopBar({ onMobileMenuClick = () => {}, user }: TopBarProps) {
         {/* User Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-              <Avatar>
-                <AvatarImage src={safeUser.avatarUrl || ""} alt={safeUser.name || safeUser.email || "User"} />
-                <AvatarFallback>{userInitials}</AvatarFallback>
-              </Avatar>
+            <Button variant="ghost" className="relative h-12 w-12 rounded-full p-0">
+              <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                {safeUser.avatarUrl ? (
+                  <AvatarImage src={safeUser.avatarUrl} alt={safeUser.name || safeUser.email || "User"} className="w-12 h-12 object-cover" />
+                ) : safeUser.name ? (
+                  <span className="text-xl font-bold text-gray-700">{safeUser.name.charAt(0).toUpperCase()}</span>
+                ) : (
+                  <User className="w-7 h-7 text-gray-400" />
+                )}
+              </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
-            <DropdownMenuLabel>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{safeUser.name || "User"}</p>
-                <p className="text-xs leading-none text-muted-foreground">{safeUser.email || ""}</p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <a href="/dashboard/profile">Profile</a>
+              <a href="/dashboard/profile" className="flex items-center font-semibold text-[#0a2642]">
+                <User className="mr-2 h-5 w-5" />
+                My Profile
+              </a>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <a href="/dashboard/settings">Settings</a>
+              <a href="/dashboard/usage-history" className="flex items-center">
+                <CreditCard className="mr-2 h-5 w-5" />
+                Usage History
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href="/dashboard/account" className="flex items-center">
+                <Home className="mr-2 h-5 w-5" />
+                Account
+              </a>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <form action={logoutUser}>
-                <button type="submit" className="w-full text-left">
+              <form action={logoutUser} className="w-full">
+                <button type="submit" className="flex items-center w-full text-left">
+                  <LogOut className="mr-2 h-5 w-5" />
                   Logout
                 </button>
               </form>

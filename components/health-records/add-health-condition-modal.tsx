@@ -138,7 +138,7 @@ export function AddHealthConditionModal({ healthRecordId }: AddHealthConditionMo
 
             <div className="space-y-2">
               <Label>Attachment</Label>
-              <FileUpload endpoint="healthConditionAttachment" value={attachmentUrl} onChange={setAttachmentUrl} />
+              <FileUpload bucket="health-conditions" onUploadComplete={setAttachmentUrl} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
             </div>
 
             <DialogFooter>

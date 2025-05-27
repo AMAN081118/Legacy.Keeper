@@ -60,10 +60,11 @@ export function ViewBusinessPlanModal({ businessPlan }: ViewBusinessPlanModalPro
               <p className="mt-1 whitespace-pre-wrap">{businessPlan.succession_plans || "-"}</p>
             </div>
 
-            {businessPlan.attachment_url && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Attachment</h3>
-                <div className="mt-2">
+            {/* Attachment field: always show */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Attachment</h3>
+              <div className="mt-2">
+                {businessPlan.attachment_url ? (
                   <a
                     href={businessPlan.attachment_url}
                     target="_blank"
@@ -72,9 +73,11 @@ export function ViewBusinessPlanModal({ businessPlan }: ViewBusinessPlanModalPro
                   >
                     View Document
                   </a>
-                </div>
+                ) : (
+                  <span className="text-gray-400">No attachment</span>
+                )}
               </div>
-            )}
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>

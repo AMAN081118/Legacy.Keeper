@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { getNotifications, type Notification } from "@/app/actions/notifications"
+import { getNotifications, type Notification, markAllNotificationsRead, deleteNotification } from "@/app/actions/notifications"
 import { resendInvitation } from "@/app/actions/nominees"
 import { useToast } from "@/components/ui/use-toast"
 import Link from "next/link"
@@ -20,6 +20,7 @@ import Link from "next/link"
 export function NotificationDropdown() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
   const { toast } = useToast()
 
   const fetchNotifications = async () => {
@@ -41,6 +42,16 @@ export function NotificationDropdown() {
     const interval = setInterval(fetchNotifications, 2 * 60 * 1000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    // Only mark as read when dropdown closes
+    if (dropdownOpen === false) {
+      markAllNotificationsRead()
+      setTimeout(fetchNotifications, 500)
+    }
+  }, [dropdownOpen])
+
+  const unreadCount = notifications.filter(n => !n.read).length
 
   const handleResendInvitation = async (nomineeId: string) => {
     setLoading(true)
@@ -71,21 +82,30 @@ export function NotificationDropdown() {
     }
   }
 
-  const handleDeleteNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id))
+  const handleDeleteNotification = async (id: string) => {
+    const result = await deleteNotification(id)
+    if (result.success) {
+      setNotifications((prev) => prev.filter((n) => n.id !== id))
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to delete notification.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
       <DropdownMenuTrigger asChild>
         <button className="relative rounded-full p-2 text-gray-500 hover:bg-gray-100">
           <Bell className="h-5 w-5" />
-          {notifications.length > 0 && (
+          {unreadCount > 0 && (
             <Badge
               className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-red-500 text-white"
               variant="destructive"
             >
-              {notifications.length}
+              {unreadCount}
             </Badge>
           )}
         </button>
@@ -111,27 +131,19 @@ export function NotificationDropdown() {
                 </button>
                 <div className="flex justify-between items-start">
                   <div>
-                    {notification.type === "invitation_received" ? (
-                      <>
-                        <h4 className="text-sm font-medium">
-                          {notification.data?.inviterName || "A user"} has requested to be their nominee
-                        </h4>
-                        {notification.data?.onboardingUrl && (
-                          <Link href={notification.data.onboardingUrl} passHref>
-                            <Button variant="default" size="sm" className="mt-2 text-xs">
-                              View Request
-                            </Button>
-                          </Link>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <h4 className="text-sm font-medium">{notification.title}</h4>
-                        <p className="text-xs text-gray-500 mt-1">{notification.message}</p>
-                      </>
+                    <h4 className="text-sm font-medium">{notification.title || "Notification"}</h4>
+                    {notification.message && (
+                      <p className="text-xs text-gray-500 mt-1">{notification.message}</p>
+                    )}
+                    {notification.type === "invitation_received" && notification.data?.invitationLink && (
+                      <Link href={notification.data.invitationLink} passHref>
+                        <Button variant="default" size="sm" className="mt-2 text-xs">
+                          View Invitation
+                        </Button>
+                      </Link>
                     )}
                     <p className="text-xs text-gray-400 mt-1">
-                      {new Date(notification.createdAt).toLocaleDateString()}
+                      {notification.created_at ? new Date(notification.created_at).toLocaleString() : "No date"}
                     </p>
                   </div>
                   <div className="flex flex-col gap-2">

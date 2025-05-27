@@ -180,7 +180,7 @@ export function AddMemberModal() {
 
             <div className="space-y-2">
               <Label>Medical Records</Label>
-              <FileUpload bucket="user_documents" onUploadComplete={handleFileUpload} accept=".pdf,.jpg,.jpeg,.png" />
+              <FileUpload bucket="health-records" onUploadComplete={handleFileUpload} accept=".pdf,.jpg,.jpeg,.png" />
               {!bucketReady && (
                 <p className="text-xs text-red-500 mt-1">Storage not available. File uploads may not work.</p>
               )}

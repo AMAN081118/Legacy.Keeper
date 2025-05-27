@@ -207,21 +207,25 @@ export function AddTrusteeModal({ isOpen, onClose, onAddTrustee }: AddTrusteeMod
                   <p className="text-xs text-gray-500">Drag & Drop files here</p>
                   <p className="text-xs text-gray-500">Supported format: .pdf, .jpg, .jpeg</p>
                 </div>
-                <div className="mt-2">
-                  <label htmlFor="government-id">
-                    <Button type="button" variant="secondary" size="sm" className="text-xs">
-                      Browse Files
-                    </Button>
+                <div className="mt-2 flex items-center">
+                  <label
+                    htmlFor="governmentId"
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500 py-2 px-3 border border-gray-300 shadow-sm text-xs"
+                  >
+                    <span>Browse Files</span>
                     <input
-                      id="government-id"
+                      id="governmentId"
+                      name="governmentId"
                       type="file"
+                      className="sr-only"
                       accept=".pdf,.jpg,.jpeg,.png"
-                      className="hidden"
                       onChange={handleGovernmentIdChange}
                     />
                   </label>
+                  {governmentId ? (
+                    <div className="ml-2 text-xs text-gray-500">{governmentId.name}</div>
+                  ) : null}
                 </div>
-                {governmentId && <div className="mt-2 text-xs text-gray-500">{governmentId.name}</div>}
               </div>
             </div>
           </div>

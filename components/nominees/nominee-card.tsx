@@ -1,11 +1,15 @@
 "use client"
 
-import { Trash2, Pencil, RefreshCw } from "lucide-react"
+import { Trash2, Pencil, RefreshCw, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { resendInvitation } from "@/app/actions/nominees"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { useRole } from "@/components/dashboard/role-context"
+import { UserCircle } from "lucide-react"
+import Image from "next/image"
 
 interface Nominee {
   id: string
@@ -28,7 +32,10 @@ interface NomineeCardProps {
 
 export function NomineeCard({ nominee, onEdit, onDelete }: NomineeCardProps) {
   const [isResending, setIsResending] = useState(false)
+  const [viewOpen, setViewOpen] = useState(false)
   const { toast } = useToast()
+  const { currentRole } = useRole()
+  const isUserRole = currentRole?.name === "user" || currentRole?.name === "nominee"
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -73,95 +80,102 @@ export function NomineeCard({ nominee, onEdit, onDelete }: NomineeCardProps) {
   }
 
   return (
-    <div className="bg-gray-50 p-6 rounded-lg">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-4">
-          <div className="h-12 w-12 rounded-full overflow-hidden bg-gray-200">
-            {nominee.profile_photo_url ? (
-              <img
-                src={nominee.profile_photo_url || "/placeholder.svg"}
-                alt={nominee.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="h-full w-full flex items-center justify-center text-gray-500">
-                {nominee.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
-          <div>
-            <h3 className="font-medium">{nominee.name}</h3>
-            <p className="text-sm text-gray-500">{nominee.relationship}</p>
-          </div>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="ghost" size="icon" onClick={onDelete}>
-            <Trash2 className="h-4 w-4 text-gray-500" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onEdit}>
-            <Pencil className="h-4 w-4 text-gray-500" />
-          </Button>
-        </div>
-      </div>
-      <div className="space-y-2">
-        <div className="flex items-center space-x-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4 text-gray-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+    <div className="bg-white rounded-xl shadow-sm p-0 flex flex-col items-center w-full max-w-xs mx-auto">
+      {/* Avatar area with icons */}
+      <div className="relative w-full flex flex-col items-center pt-6 pb-2 bg-gray-100 rounded-t-xl">
+        <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+          {nominee.profile_photo_url ? (
+            <Image
+              src={nominee.profile_photo_url}
+              alt={nominee.name}
+              width={96}
+              height={96}
+              className="h-full w-full object-cover"
             />
-          </svg>
-          <span className="text-sm">{nominee.email}</span>
+          ) : (
+            <UserCircle className="h-16 w-16 text-gray-400" />
+          )}
         </div>
-        <div className="flex items-center space-x-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4 text-gray-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-            />
-          </svg>
-          <span className="text-sm">{nominee.phone}</span>
-        </div>
-      </div>
-      <div className="mt-4 flex items-center justify-between">
-        <Badge className={`${getStatusColor(nominee.status)}`}>
-          {nominee.status.charAt(0).toUpperCase() + nominee.status.slice(1)}
-        </Badge>
-        {(nominee.status === "pending" || nominee.status === "rejected") && (
+        {/* Top right icons */}
+        <div className="absolute top-3 right-3 flex gap-2">
           <Button
-            variant="outline"
-            size="sm"
-            className="text-xs"
-            onClick={handleResendInvitation}
-            disabled={isResending}
+            variant="ghost"
+            size="icon"
+            onClick={onEdit}
+            className="text-gray-500 hover:text-gray-700"
+            aria-label="Edit"
           >
-            {isResending ? (
-              <>
-                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                Resending...
-              </>
-            ) : (
-              "Resend Invitation"
-            )}
+            <Pencil className="h-5 w-5" />
           </Button>
-        )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onDelete}
+            className="text-gray-500 hover:text-gray-700"
+            aria-label="Delete"
+          >
+            <Trash2 className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
+      {/* Name and relationship */}
+      <div className="flex flex-col items-center px-6 py-4 w-full">
+        <h3 className="font-semibold text-lg text-gray-900 mb-1 text-center w-full truncate">{nominee.name}</h3>
+        <span className="inline-block bg-blue-100 text-blue-700 text-xs font-medium rounded-full px-4 py-1 mb-3">{nominee.relationship}</span>
+        {/* Email */}
+        <div className="flex items-center gap-2 text-gray-700 text-sm w-full mb-1">
+          <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16v16H4z" stroke="none"/><path d="M22 6l-10 7L2 6" /></svg>
+          <span className="truncate">{nominee.email}</span>
+        </div>
+        {/* Phone */}
+        <div className="flex items-center gap-2 text-gray-700 text-sm w-full">
+          <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2 2A18 18 0 0 1 3 5a2 2 0 0 1 2-2h2.09a2 2 0 0 1 2 1.72c.13.81.36 1.6.68 2.34a2 2 0 0 1-.45 2.11l-.27.27a16 16 0 0 0 6.29 6.29l.27-.27a2 2 0 0 1 2.11-.45c.74.32 1.53.55 2.34.68A2 2 0 0 1 19 16.91z" /></svg>
+          <span className="truncate">{nominee.phone}</span>
+        </div>
+      </div>
+      {/* View icon at bottom right */}
+      <div className="flex justify-end w-full px-6 pb-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setViewOpen(true)}
+          className="text-gray-500 hover:text-gray-700"
+          aria-label="View"
+        >
+          <Eye className="h-5 w-5" />
+        </Button>
+      </div>
+      {/* View Modal */}
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nominee Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Name</h3>
+              <p className="mt-1">{nominee.name}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Email</h3>
+              <p className="mt-1">{nominee.email}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Relationship</h3>
+              <p className="mt-1">{nominee.relationship}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Phone</h3>
+              <p className="mt-1">{nominee.phone}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
