@@ -5,6 +5,11 @@ import type { NextRequest } from "next/server"
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
 
+  // Add CORS headers
+  res.headers.set('Access-Control-Allow-Origin', '*')
+  res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+
   try {
     const supabase = createMiddlewareClient({ req, res })
 
@@ -12,10 +17,12 @@ export async function middleware(req: NextRequest) {
       data: { session },
     } = await supabase.auth.getSession()
 
-    // Only allow unauthenticated users to access registration and login pages
-    const isRegistrationPage = req.nextUrl.pathname === "/" || req.nextUrl.pathname.startsWith("/auth")
+    // Only allow unauthenticated users to access registration, login, and landing pages
+    const isPublicPage = req.nextUrl.pathname === "/" || 
+                        req.nextUrl.pathname.startsWith("/auth") ||
+                        req.nextUrl.pathname.startsWith("/landing")
 
-    if (!session && !isRegistrationPage) {
+    if (!session && !isPublicPage) {
       // Not logged in and trying to access a protected route
       const redirectUrl = req.nextUrl.clone()
       redirectUrl.pathname = "/"
@@ -24,7 +31,7 @@ export async function middleware(req: NextRequest) {
     }
 
     // If user is signed in and tries to access registration/login, redirect to dashboard
-    if (session && isRegistrationPage) {
+    if (session && req.nextUrl.pathname.startsWith("/auth")) {
       const redirectUrl = req.nextUrl.clone()
       redirectUrl.pathname = "/dashboard"
       return NextResponse.redirect(redirectUrl)
@@ -37,5 +44,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico).*)",
+  ],
 }

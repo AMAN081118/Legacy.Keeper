@@ -1,0 +1,26 @@
+{
+  "kind": "collectionType",
+  "collectionName": "faq_category_questions",
+  "info": {
+    "singularName": "faq-category-question",
+    "pluralName": "faq-category-questions",
+    "displayName": "FAQ Category Question"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "question": {
+      "type": "string"
+    },
+    "answer": {
+      "type": "text"
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::faq-category.faq-category",
+      "inversedBy": "faq_category_questions"
+    }
+  }
+}

@@ -9,6 +9,7 @@ const nextConfig = {
   },
   images: {
     domains: [
+      "hebbkx1anhila5yf.public.blob.vercel-storage.com",
       'fxtxegzuubiunsanfzbb.supabase.co',
       'lkcdxmxwemaszikttxwz.supabase.co',
       // add any other domains you use for images
