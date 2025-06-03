@@ -61,9 +61,9 @@ export function ViewBusinessPlanModal({ businessPlan }: ViewBusinessPlanModalPro
             </div>
 
             {/* Attachment field: always show */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Attachment</h3>
-              <div className="mt-2">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Attachment</h3>
+                <div className="mt-2">
                 {businessPlan.attachment_url ? (
                   <a
                     href={businessPlan.attachment_url}

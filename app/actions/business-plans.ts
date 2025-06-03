@@ -1,7 +1,6 @@
 "use server"
 
 import { createServerClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { v4 as uuidv4 } from "uuid"
 import { uploadFile } from "./upload"
@@ -43,163 +42,170 @@ export async function getBusinessPlans(sessionUserId?: string, currentRole?: { n
 }
 
 export async function addBusinessPlan(formData: FormData) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  try {
+    const supabase = createServerClient()
 
-  const { data: session, error: sessionError } = await supabase.auth.getSession()
-  if (sessionError || !session.session?.user) {
-    console.error("Error fetching session:", sessionError)
-    return { error: "Not authenticated", success: false }
-  }
-
-  const userId = session.session.user.id
-  const businessName = formData.get("businessName") as string
-  const businessType = formData.get("businessType") as string
-  const ownershipPercentage = formData.get("ownershipPercentage") as string
-  const investmentAmount = Number.parseFloat(formData.get("investmentAmount") as string)
-  const successionPlans = formData.get("successionPlans") as string
-  const file = formData.get("file") as File | null
-
-  if (!businessName || !businessType || isNaN(investmentAmount)) {
-    return { error: "Missing required fields", success: false }
-  }
-
-  let attachmentUrl = null
-
-  if (file && file.size > 0) {
-    try {
-      // Generate a unique file path
-      const fileExt = file.name.split(".").pop() || "file"
-      const fileName = `${uuidv4()}.${fileExt}`
-      const filePath = `business_plans/${userId}/${fileName}`
-
-      // Convert file to ArrayBuffer for server upload
-      const arrayBuffer = await file.arrayBuffer()
-
-      // Use server action to upload file
-      const result = await uploadFile("user_documents", filePath, arrayBuffer, file.type)
-
-      if (!result.success || !result.url) {
-        throw new Error(result.error || "Failed to upload file")
-      }
-
-      attachmentUrl = result.url
-    } catch (error: any) {
-      console.error("Error processing file:", error)
-      return { error: `Error uploading file: ${error.message}`, success: false }
+    const { data: session, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError || !session.session?.user) {
+      console.error("Error fetching session:", sessionError)
+      return { error: "Not authenticated", success: false }
     }
-  }
 
-  const { error } = await supabase.from("business_plans").insert({
-    id: uuidv4(),
-    user_id: userId,
-    business_name: businessName,
-    business_type: businessType,
-    ownership_percentage: ownershipPercentage,
-    investment_amount: investmentAmount,
-    succession_plans: successionPlans,
-    attachment_url: attachmentUrl,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  })
+    const userId = session.session.user.id
+    const businessName = formData.get("businessName") as string
+    const businessType = formData.get("businessType") as string
+    const ownershipPercentage = formData.get("ownershipPercentage") as string
+    const investmentAmount = Number.parseFloat(formData.get("investmentAmount") as string)
+    const successionPlans = formData.get("successionPlans") as string
+    const file = formData.get("file") as File | null
 
-  if (error) {
-    console.error("Error adding business plan:", error)
-    return { error: error.message, success: false }
-  }
-
-  revalidatePath("/dashboard/business-plans")
-  return { success: true, error: null }
-}
-
-export async function updateBusinessPlan(formData: FormData) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
-
-  const { data: session, error: sessionError } = await supabase.auth.getSession()
-  if (sessionError || !session.session?.user) {
-    console.error("Error fetching session:", sessionError)
-    return { error: "Not authenticated", success: false }
-  }
-
-  const userId = session.session.user.id
-  const id = formData.get("id") as string
-  const businessName = formData.get("businessName") as string
-  const businessType = formData.get("businessType") as string
-  const ownershipPercentage = formData.get("ownershipPercentage") as string
-  const investmentAmount = Number.parseFloat(formData.get("investmentAmount") as string)
-  const successionPlans = formData.get("successionPlans") as string
-  const file = formData.get("file") as File | null
-
-  if (!id || !businessName || !businessType || isNaN(investmentAmount)) {
-    return { error: "Missing required fields", success: false }
-  }
-
-  // Verify ownership
-  const { data: existingPlan, error: fetchError } = await supabase
-    .from("business_plans")
-    .select("*")
-    .eq("id", id)
-    .eq("user_id", userId)
-    .single()
-
-  if (fetchError || !existingPlan) {
-    console.error("Error fetching business plan or not found:", fetchError)
-    return { error: "Business plan not found or you do not have permission", success: false }
-  }
-
-  let attachmentUrl = existingPlan.attachment_url
-
-  if (file && file.size > 0) {
-    try {
-      // Generate a unique file path
-      const fileExt = file.name.split(".").pop() || "file"
-      const fileName = `${uuidv4()}.${fileExt}`
-      const filePath = `business_plans/${userId}/${fileName}`
-
-      // Convert file to ArrayBuffer for server upload
-      const arrayBuffer = await file.arrayBuffer()
-
-      // Use server action to upload file
-      const result = await uploadFile("user_documents", filePath, arrayBuffer, file.type)
-
-      if (!result.success || !result.url) {
-        throw new Error(result.error || "Failed to upload file")
-      }
-
-      attachmentUrl = result.url
-    } catch (error: any) {
-      console.error("Error processing file:", error)
-      return { error: `Error uploading file: ${error.message}`, success: false }
+    if (!businessName || !businessType || isNaN(investmentAmount)) {
+      return { error: "Missing required fields", success: false }
     }
-  }
 
-  const { error } = await supabase
-    .from("business_plans")
-    .update({
+    let attachmentUrl = null
+
+    if (file && file.size > 0) {
+      try {
+        // Generate a unique file path
+        const fileExt = file.name.split(".").pop() || "file"
+        const fileName = `${uuidv4()}.${fileExt}`
+        const filePath = `business_plans/${userId}/${fileName}`
+
+        // Convert file to ArrayBuffer for server upload
+        const arrayBuffer = await file.arrayBuffer()
+
+        // Use server action to upload file
+        const result = await uploadFile("user_documents", filePath, arrayBuffer, file.type)
+
+        if (!result.success || !result.url) {
+          throw new Error(result.error || "Failed to upload file")
+        }
+
+        attachmentUrl = result.url
+      } catch (error: any) {
+        console.error("Error processing file:", error)
+        return { error: `Error uploading file: ${error.message}`, success: false }
+      }
+    }
+
+    const { error } = await supabase.from("business_plans").insert({
+      id: uuidv4(),
+      user_id: userId,
       business_name: businessName,
       business_type: businessType,
       ownership_percentage: ownershipPercentage,
       investment_amount: investmentAmount,
       succession_plans: successionPlans,
       attachment_url: attachmentUrl,
+      created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", id)
-    .eq("user_id", userId)
 
-  if (error) {
+    if (error) {
+      console.error("Error adding business plan:", error)
+      return { error: error.message, success: false }
+    }
+
+    revalidatePath("/dashboard/business-plans")
+    return { success: true, error: null }
+  } catch (error) {
+    console.error("Error adding business plan:", error)
+    return { error: error.message, success: false }
+  }
+}
+
+export async function updateBusinessPlan(formData: FormData) {
+  try {
+    const supabase = createServerClient()
+
+    const { data: session, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError || !session.session?.user) {
+      console.error("Error fetching session:", sessionError)
+      return { error: "Not authenticated", success: false }
+    }
+
+    const userId = session.session.user.id
+    const id = formData.get("id") as string
+    const businessName = formData.get("businessName") as string
+    const businessType = formData.get("businessType") as string
+    const ownershipPercentage = formData.get("ownershipPercentage") as string
+    const investmentAmount = Number.parseFloat(formData.get("investmentAmount") as string)
+    const successionPlans = formData.get("successionPlans") as string
+    const file = formData.get("file") as File | null
+
+    if (!id || !businessName || !businessType || isNaN(investmentAmount)) {
+      return { error: "Missing required fields", success: false }
+    }
+
+    // Verify ownership
+    const { data: existingPlan, error: fetchError } = await supabase
+      .from("business_plans")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .single()
+
+    if (fetchError || !existingPlan) {
+      console.error("Error fetching business plan or not found:", fetchError)
+      return { error: "Business plan not found or you do not have permission", success: false }
+    }
+
+    let attachmentUrl = existingPlan.attachment_url
+
+    if (file && file.size > 0) {
+      try {
+        // Generate a unique file path
+        const fileExt = file.name.split(".").pop() || "file"
+        const fileName = `${uuidv4()}.${fileExt}`
+        const filePath = `business_plans/${userId}/${fileName}`
+
+        // Convert file to ArrayBuffer for server upload
+        const arrayBuffer = await file.arrayBuffer()
+
+        // Use server action to upload file
+        const result = await uploadFile("user_documents", filePath, arrayBuffer, file.type)
+
+        if (!result.success || !result.url) {
+          throw new Error(result.error || "Failed to upload file")
+        }
+
+        attachmentUrl = result.url
+      } catch (error: any) {
+        console.error("Error processing file:", error)
+        return { error: `Error uploading file: ${error.message}`, success: false }
+      }
+    }
+
+    const { error } = await supabase
+      .from("business_plans")
+      .update({
+        business_name: businessName,
+        business_type: businessType,
+        ownership_percentage: ownershipPercentage,
+        investment_amount: investmentAmount,
+        succession_plans: successionPlans,
+        attachment_url: attachmentUrl,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("user_id", userId)
+
+    if (error) {
+      console.error("Error updating business plan:", error)
+      return { error: error.message, success: false }
+    }
+
+    revalidatePath("/dashboard/business-plans")
+    return { success: true, error: null }
+  } catch (error) {
     console.error("Error updating business plan:", error)
     return { error: error.message, success: false }
   }
-
-  revalidatePath("/dashboard/business-plans")
-  return { success: true, error: null }
 }
 
 export async function deleteBusinessPlan(id: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createServerClient()
 
   const { data: session, error: sessionError } = await supabase.auth.getSession()
   if (sessionError || !session.session?.user) {
@@ -252,8 +258,7 @@ export async function deleteBusinessPlan(id: string) {
 }
 
 export async function getBusinessPlanById(id: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createServerClient()
 
   const { data: session, error: sessionError } = await supabase.auth.getSession()
   if (sessionError || !session.session?.user) {

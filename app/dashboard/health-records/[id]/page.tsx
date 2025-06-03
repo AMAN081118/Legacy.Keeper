@@ -98,34 +98,34 @@ export default async function HealthRecordDetailPage({ params }: { params: { id:
           </button>
         } />
       </div>
-      <div className="bg-white rounded-lg border p-6 mt-4">
-        {healthConditions && healthConditions.length > 0 ? (
-          <div className="space-y-4">
-            {healthConditions.map((condition) => (
-              <div key={condition.id} className="border rounded-lg p-4">
+        <div className="bg-white rounded-lg border p-6 mt-4">
+          {healthConditions && healthConditions.length > 0 ? (
+            <div className="space-y-4">
+              {healthConditions.map((condition) => (
+                <div key={condition.id} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-medium">{condition.condition_name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{condition.description || "No description provided"}</p>
+                  <h3 className="font-medium">{condition.condition_name}</h3>
+                  <p className="text-sm text-gray-600 mt-1">{condition.description || "No description provided"}</p>
                     <p className="text-xs text-gray-500 mt-2">
                       {condition.doctor_name ? `Dr. ${condition.doctor_name}` : "No doctor specified"}
                       {condition.visit_date ? ` • ${formatDate(condition.visit_date)}` : ""}
                     </p>
                   </div>
                   <HealthConditionActions condition={condition} />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-center mb-6">
-              <img src="/placeholder-uvtex.png" alt="No health conditions" className="mx-auto h-30 w-30" />
-              <p className="mt-4 text-gray-500">No Health Conditions Found</p>
+              ))}
             </div>
-            <AddHealthConditionModal healthRecordId={params.id} />
-          </div>
-        )}
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="text-center mb-6">
+                <img src="/placeholder-uvtex.png" alt="No health conditions" className="mx-auto h-30 w-30" />
+                <p className="mt-4 text-gray-500">No Health Conditions Found</p>
+              </div>
+              <AddHealthConditionModal healthRecordId={params.id} />
+            </div>
+          )}
       </div>
     </div>
   )

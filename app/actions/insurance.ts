@@ -1,14 +1,12 @@
 "use server"
 
 import { createServerClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
 import { v4 as uuidv4 } from "uuid"
 import { revalidatePath } from "next/cache"
 import type { Insurance } from "@/lib/supabase/database.types"
 
 export async function getInsuranceCount() {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createServerClient()
 
   const { data: session, error: sessionError } = await supabase.auth.getSession()
   if (sessionError || !session.session?.user) {
@@ -29,8 +27,7 @@ export async function getInsuranceCount() {
 }
 
 export async function getInsuranceList(page = 1, pageSize = 5, insuranceType?: string, searchQuery?: string, userIdOverride?: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createServerClient()
 
   const { data: session, error: sessionError } = await supabase.auth.getSession()
   if (sessionError || !session.session?.user) {
@@ -68,8 +65,7 @@ export async function getInsuranceList(page = 1, pageSize = 5, insuranceType?: s
 }
 
 export async function addInsurance(formData: FormData) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createServerClient()
 
   const { data: session, error: sessionError } = await supabase.auth.getSession()
   if (sessionError || !session.session?.user) {
@@ -121,8 +117,7 @@ export async function addInsurance(formData: FormData) {
 }
 
 export async function updateInsurance(formData: FormData) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createServerClient()
 
   const { data: session, error: sessionError } = await supabase.auth.getSession()
   if (sessionError || !session.session?.user) {
@@ -165,8 +160,7 @@ export async function updateInsurance(formData: FormData) {
 }
 
 export async function deleteInsurance(id: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createServerClient()
 
   const { data: session, error: sessionError } = await supabase.auth.getSession()
   if (sessionError || !session.session?.user) {
@@ -185,8 +179,7 @@ export async function deleteInsurance(id: string) {
 }
 
 export async function getInsuranceById(id: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createServerClient()
 
   const { data: session, error: sessionError } = await supabase.auth.getSession()
   if (sessionError || !session.session?.user) {

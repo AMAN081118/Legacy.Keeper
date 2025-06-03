@@ -27,7 +27,7 @@ export async function getCurrentRoleFromSession() {
     
     if (!currentRoleCookie?.value) {
       console.log('[Debug] No role cookie found, defaulting to null')
-      return null
+  return null
     }
     
     const role = JSON.parse(decodeURIComponent(currentRoleCookie.value))

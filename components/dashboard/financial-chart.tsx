@@ -49,13 +49,13 @@ export function FinancialChart({ transactionsData }: FinancialChartProps) {
     } else if (timeframe === "monthly") {
       // Get last 12 months
       periods = Array.from({ length: 12 }, (_, i) => {
-        const date = subMonths(now, i)
-        return {
-          name: format(date, "MMM"),
-          start: startOfMonth(date),
-          end: endOfMonth(date),
-        }
-      }).reverse()
+      const date = subMonths(now, i)
+      return {
+        name: format(date, "MMM"),
+        start: startOfMonth(date),
+        end: endOfMonth(date),
+      }
+    }).reverse()
     } else if (timeframe === "yearly") {
       // Get last 5 years
       periods = Array.from({ length: 5 }, (_, i) => {

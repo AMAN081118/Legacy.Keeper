@@ -21,10 +21,11 @@ import { useRouter } from "next/navigation"
 interface AddDebtLoanModalProps {
   isOpen: boolean
   onClose: () => void
+  onSuccess?: () => void
   defaultType?: "Given" | "Received"
 }
 
-export function AddDebtLoanModal({ isOpen, onClose, defaultType = "Given" }: AddDebtLoanModalProps) {
+export function AddDebtLoanModal({ isOpen, onClose, onSuccess, defaultType = "Given" }: AddDebtLoanModalProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [transactionType, setTransactionType] = useState<"Given" | "Received">(defaultType)
@@ -69,7 +70,7 @@ export function AddDebtLoanModal({ isOpen, onClose, defaultType = "Given" }: Add
 
         // Upload the file
         const { error: uploadError } = await supabase.storage
-          .from("debts_loans_documents")
+          .from("debts-loans-documents")
           .upload(filePath, selectedFile)
 
         if (uploadError) {
@@ -77,7 +78,7 @@ export function AddDebtLoanModal({ isOpen, onClose, defaultType = "Given" }: Add
         }
 
         // Get the public URL
-        const { data: urlData } = supabase.storage.from("debts_loans_documents").getPublicUrl(filePath)
+        const { data: urlData } = supabase.storage.from("debts-loans-documents").getPublicUrl(filePath)
         attachmentUrl = urlData.publicUrl
       }
 
@@ -107,9 +108,11 @@ export function AddDebtLoanModal({ isOpen, onClose, defaultType = "Given" }: Add
         description: "Debt/loan entry added successfully.",
       })
 
-      // Close the modal and refresh the page
+      // Instead of router.refresh(), call onSuccess if provided
+      if (typeof onSuccess === "function") {
+        await onSuccess()
+      }
       onClose()
-      router.refresh()
     } catch (error: any) {
       console.error("Error adding debt/loan:", error)
       toast({
@@ -171,7 +174,7 @@ export function AddDebtLoanModal({ isOpen, onClose, defaultType = "Given" }: Add
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="amount_due">Amount Due On</Label>
+              <Label htmlFor="amount_due">Amount Due</Label>
               <Input id="amount_due" name="amount_due" type="number" placeholder="Enter amount due" />
             </div>
             <div className="space-y-2">

@@ -26,6 +26,7 @@ export function AddDocumentModal({ open, onClose, onAdd, userId }: AddDocumentMo
   const [description, setDescription] = useState("")
   const [documentType, setDocumentType] = useState("PDF")
   const [file, setFile] = useState<File | null>(null)
+  const [removeAttachment, setRemoveAttachment] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
 
@@ -78,6 +79,11 @@ export function AddDocumentModal({ open, onClose, onAdd, userId }: AddDocumentMo
     }
   }
 
+  const handleRemoveAttachment = () => {
+    setFile(null)
+    setRemoveAttachment(true)
+  }
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[550px]">
@@ -122,12 +128,24 @@ export function AddDocumentModal({ open, onClose, onAdd, userId }: AddDocumentMo
             <div className="grid grid-cols-4 items-start gap-4">
               <Label className="text-right pt-2">Attach Documents</Label>
               <div className="col-span-3">
-                <FileUpload
-                  bucket="documents"
-                  onFileChange={setFile}
-                  maxSize={10}
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                />
+                {file ? (
+                  <div className="mt-2 text-sm text-gray-500 flex items-center gap-2">
+                    <span>Selected file: {file.name}</span>
+                    <Button type="button" variant="ghost" size="sm" className="text-red-500" onClick={handleRemoveAttachment}>
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
+                  <FileUpload
+                    bucket="documents"
+                    onFileChange={setFile}
+                    maxSize={10}
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  />
+                )}
+                {removeAttachment && (
+                  <div className="mt-2 text-xs text-red-500">Attachment will be removed.</div>
+                )}
               </div>
             </div>
           </div>

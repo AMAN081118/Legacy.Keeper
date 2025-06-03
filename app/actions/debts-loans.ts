@@ -44,7 +44,7 @@ export async function createDebtLoan(formData: FormData) {
 
       // Upload the file
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("debts_loans_documents")
+        .from("debts-loans-documents")
         .upload(filePath, file)
 
       if (uploadError) {
@@ -53,7 +53,7 @@ export async function createDebtLoan(formData: FormData) {
       }
 
       // Get the public URL
-      const { data: urlData } = supabase.storage.from("debts_loans_documents").getPublicUrl(filePath)
+      const { data: urlData } = supabase.storage.from("debts-loans-documents").getPublicUrl(filePath)
 
       attachmentUrl = urlData.publicUrl
     }
@@ -131,7 +131,7 @@ export async function updateDebtLoan(id: string, formData: FormData) {
 
       // Upload the file
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("debts_loans_documents")
+        .from("debts-loans-documents")
         .upload(filePath, file)
 
       if (uploadError) {
@@ -140,9 +140,29 @@ export async function updateDebtLoan(id: string, formData: FormData) {
       }
 
       // Get the public URL
-      const { data: urlData } = supabase.storage.from("debts_loans_documents").getPublicUrl(filePath)
+      const { data: urlData } = supabase.storage.from("debts-loans-documents").getPublicUrl(filePath)
 
       attachmentUrl = urlData.publicUrl
+    }
+
+    // Remove attachment if requested
+    if (formData.get("removeAttachment")) {
+      if (attachmentUrl) {
+        // Extract the file path relative to the bucket
+        // Example: https://<project>.supabase.co/storage/v1/object/public/debts-loans-documents/userid/filename.pdf
+        const urlParts = attachmentUrl.split("/debts-loans-documents/")
+        if (urlParts.length === 2) {
+          const filePath = urlParts[1]
+          const { error: deleteError } = await supabase.storage
+            .from("debts-loans-documents")
+            .remove([filePath])
+          if (deleteError) {
+            console.error("Error deleting file:", deleteError)
+            // Continue even if file deletion fails
+          }
+        }
+      }
+      attachmentUrl = null
     }
 
     // Update the debt/loan record
@@ -211,7 +231,7 @@ export async function deleteDebtLoan(id: string) {
       const filePath = record.attachment_url.split("/").pop()
       if (filePath) {
         const { error: deleteFileError } = await supabase.storage
-          .from("debts_loans_documents")
+          .from("debts-loans-documents")
           .remove([`${user.id}/${filePath}`])
 
         if (deleteFileError) {
@@ -235,4 +255,19 @@ export async function deleteDebtLoan(id: string) {
     console.error("Error in deleteDebtLoan:", error)
     return { error: error.message, success: false }
   }
+}
+
+export async function getDebtsLoans(userId: string) {
+  const supabase = createServerClient()
+  // ... existing code ...
+}
+
+export async function addDebtLoan(formData: FormData) {
+  const supabase = createServerClient()
+  // ... existing code ...
+}
+
+export async function getDebtLoanById(id: string) {
+  const supabase = createServerClient()
+  // ... existing code ...
 }

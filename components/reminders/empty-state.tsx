@@ -18,7 +18,6 @@ export function EmptyState() {
         <p className="mb-4 mt-2 text-sm text-muted-foreground">
           You don&apos;t have any reminders yet. Add one to get started.
         </p>
-        <AddReminderModal buttonText="+ Add New Reminder" />
       </div>
     </div>
   )

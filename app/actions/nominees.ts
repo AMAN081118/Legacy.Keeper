@@ -10,8 +10,7 @@ import { sendInvitationEmail } from "./send-invitation-email"
 // Get all nominees for the current user
 export async function getNominees() {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(cookieStore)
+    const supabase = createServerClient()
 
     const { data: user, error: userError } = await supabase.auth.getUser()
     if (userError || !user.user) {
@@ -39,8 +38,7 @@ export async function getNominees() {
 // Get the count of nominees for the current user
 export async function getNomineeCount() {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(cookieStore)
+    const supabase = createServerClient()
 
     const { data: user, error: userError } = await supabase.auth.getUser()
     if (userError || !user.user) {
@@ -67,12 +65,23 @@ export async function getNomineeCount() {
 // Add a new nominee
 export async function addNominee(formData: FormData) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(cookieStore)
+    const supabase = createServerClient()
 
     const { data: user, error: userError } = await supabase.auth.getUser()
     if (userError || !user.user) {
       throw new Error("User not authenticated")
+    }
+
+    // Validate user profile exists (should have been created during registration)
+    const { data: userProfile, error: profileError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", user.user.id)
+      .single()
+
+    if (profileError || !userProfile) {
+      console.error("User profile not found:", profileError)
+      throw new Error("User profile not found. Please contact support or try logging out and back in.")
     }
 
     // Create the nominees bucket if it doesn't exist
@@ -160,7 +169,7 @@ export async function addNominee(formData: FormData) {
         access_categories: accessCategories,
         profile_photo_url: profilePhotoUrl,
         government_id_url: governmentIdUrl,
-        status: "pending",
+        status: "none",
         invitation_token: invitationToken,
         invitation_sent_at: now,
       })
@@ -196,8 +205,7 @@ export async function addNominee(formData: FormData) {
 // Update an existing nominee
 export async function updateNominee(formData: FormData) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(cookieStore)
+    const supabase = createServerClient()
 
     const { data: user, error: userError } = await supabase.auth.getUser()
     if (userError || !user.user) {
@@ -342,8 +350,7 @@ export async function updateNominee(formData: FormData) {
 // Delete a nominee
 export async function deleteNominee(id: string) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(cookieStore)
+    const supabase = createServerClient()
 
     const { data: user, error: userError } = await supabase.auth.getUser()
     if (userError || !user.user) {
@@ -367,8 +374,7 @@ export async function deleteNominee(id: string) {
 // Resend invitation to a nominee
 export async function resendInvitation(id: string) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(cookieStore)
+    const supabase = createServerClient()
 
     const { data: user, error: userError } = await supabase.auth.getUser()
     if (userError || !user.user) {
@@ -446,19 +452,53 @@ export async function verifyInvitation(token: string, action: "accept" | "reject
       throw new Error(`Invalid or expired invitation token`)
     }
 
-    // Update the nominee status
+    // Update the nominee status and invalidate token
     const now = new Date().toISOString()
     const { error: updateError } = await supabaseAdmin
       .from("nominees")
       .update({
         status: action === "accept" ? "accepted" : "rejected",
         invitation_responded_at: now,
+        invitation_token: null
       })
       .eq("id", nominee.id)
 
     if (updateError) {
       console.error("Error updating nominee status:", updateError)
       throw new Error(`Error updating nominee status: ${updateError.message}`)
+    }
+
+    // Delete related notifications for this nominee invitation
+    // Find the user by nominee email
+    const { data: user, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("email", nominee.email)
+      .single()
+    if (!userError && user) {
+      await supabaseAdmin
+        .from("notifications")
+        .delete()
+        .eq("user_id", user.id)
+        .contains("data", { nomineeId: nominee.id })
+    }
+
+    // If action is 'accept', assign nominee role in user_roles
+    if (action === "accept") {
+      // Get the 'nominee' role id
+      const { data: role, error: roleError } = await supabaseAdmin
+        .from("roles")
+        .select("id")
+        .eq("name", "nominee")
+        .single()
+      if (!roleError && role) {
+        await supabaseAdmin.from("user_roles").insert({
+          user_id: user.id,
+          role_id: role.id,
+          related_user_id: nominee.user_id, // inviter
+          created_at: new Date().toISOString(),
+        })
+      }
     }
 
     return { success: true, action }

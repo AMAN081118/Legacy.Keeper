@@ -5,33 +5,36 @@ import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import type { DepositInvestment } from "@/lib/supabase/database.types"
 
-export async function getDepositsInvestments() {
-  const cookieStore = cookies()
-  const supabase = createServerClient()
+export async function getDepositsInvestments(userId: string) {
+  try {
+    const supabase = createServerClient()
 
-  const { data: session } = await supabase.auth.getSession()
-  if (!session.session?.user) {
-    return { success: false, error: "Not authenticated" }
-  }
+    const { data: session } = await supabase.auth.getSession()
+    if (!session.session?.user) {
+      return { success: false, error: "Not authenticated" }
+    }
 
-  const userId = session.session.user.id
+    const userId = session.session.user.id
 
-  const { data, error } = await supabase
-    .from("deposits_investments")
-    .select("*")
-    .eq("user_id", userId)
-    .order("date", { ascending: false })
+    const { data, error } = await supabase
+      .from("deposits_investments")
+      .select("*")
+      .eq("user_id", userId)
+      .order("date", { ascending: false })
 
-  if (error) {
+    if (error) {
+      console.error("Error fetching deposits and investments:", error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  } catch (error: any) {
     console.error("Error fetching deposits and investments:", error)
     return { success: false, error: error.message }
   }
-
-  return { success: true, data }
 }
 
 export async function getDepositsInvestmentsStats() {
-  const cookieStore = cookies()
   const supabase = createServerClient()
 
   const { data: session } = await supabase.auth.getSession()
@@ -75,17 +78,16 @@ export async function getDepositsInvestmentsStats() {
 }
 
 export async function addDepositInvestment(formData: FormData) {
-  const cookieStore = cookies()
-  const supabase = createServerClient()
-
-  const { data: session } = await supabase.auth.getSession()
-  if (!session.session?.user) {
-    return { success: false, error: "Not authenticated" }
-  }
-
-  const userId = session.session.user.id
-
   try {
+    const supabase = createServerClient()
+
+    const { data: session } = await supabase.auth.getSession()
+    if (!session.session?.user) {
+      return { success: false, error: "Not authenticated" }
+    }
+
+    const userId = session.session.user.id
+
     const name = formData.get("name") as string
     const rawAmount = Number.parseFloat(formData.get("amount") as string)
     // Convert amount to thousands to fit within database precision
@@ -157,17 +159,16 @@ export async function addDepositInvestment(formData: FormData) {
 }
 
 export async function updateDepositInvestment(id: string, formData: FormData) {
-  const cookieStore = cookies()
-  const supabase = createServerClient()
-
-  const { data: session } = await supabase.auth.getSession()
-  if (!session.session?.user) {
-    return { success: false, error: "Not authenticated" }
-  }
-
-  const userId = session.session.user.id
-
   try {
+    const supabase = createServerClient()
+
+    const { data: session } = await supabase.auth.getSession()
+    if (!session.session?.user) {
+      return { success: false, error: "Not authenticated" }
+    }
+
+    const userId = session.session.user.id
+
     // First check if the record belongs to the user
     const { data: existingData, error: existingError } = await supabase
       .from("deposits_investments")
@@ -214,6 +215,24 @@ export async function updateDepositInvestment(id: string, formData: FormData) {
       const { data: urlData } = await supabase.storage.from("deposits-investments").getPublicUrl(fileName)
 
       attachmentUrl = urlData.publicUrl
+    } else if (formData.get("removeAttachment")) {
+      // If removeAttachment is present, delete the file from storage and clear attachment_url
+      if (existingData.attachment_url) {
+        // Extract the file path relative to the bucket
+        // Example: https://<project>.supabase.co/storage/v1/object/public/deposits-investments/userid/filename.pdf
+        const urlParts = existingData.attachment_url.split("/deposits-investments/");
+        if (urlParts.length === 2) {
+          const filePath = urlParts[1];
+          const { error: deleteError } = await supabase.storage
+            .from("deposits-investments")
+            .remove([filePath]);
+          if (deleteError) {
+            console.error("Error deleting file:", deleteError)
+            // Continue even if file deletion fails
+          }
+        }
+      }
+      attachmentUrl = null;
     }
 
     const { data, error } = await supabase
@@ -251,17 +270,16 @@ export async function updateDepositInvestment(id: string, formData: FormData) {
 }
 
 export async function deleteDepositInvestment(id: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient()
-
-  const { data: session } = await supabase.auth.getSession()
-  if (!session.session?.user) {
-    return { success: false, error: "Not authenticated" }
-  }
-
-  const userId = session.session.user.id
-
   try {
+    const supabase = createServerClient()
+
+    const { data: session } = await supabase.auth.getSession()
+    if (!session.session?.user) {
+      return { success: false, error: "Not authenticated" }
+    }
+
+    const userId = session.session.user.id
+
     // First check if the record belongs to the user
     const { data: existingData, error: existingError } = await supabase
       .from("deposits_investments")
@@ -286,6 +304,36 @@ export async function deleteDepositInvestment(id: string) {
     return { success: true }
   } catch (error: any) {
     console.error("Error deleting deposit/investment:", error)
+    return { success: false, error: error.message }
+  }
+}
+
+export async function getDepositInvestmentById(id: string) {
+  try {
+    const supabase = createServerClient()
+
+    const { data: session } = await supabase.auth.getSession()
+    if (!session.session?.user) {
+      return { success: false, error: "Not authenticated" }
+    }
+
+    const userId = session.session.user.id
+
+    const { data, error } = await supabase
+      .from("deposits_investments")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .single()
+
+    if (error) {
+      console.error("Error fetching deposit/investment:", error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  } catch (error: any) {
+    console.error("Error fetching deposit/investment:", error)
     return { success: false, error: error.message }
   }
 }

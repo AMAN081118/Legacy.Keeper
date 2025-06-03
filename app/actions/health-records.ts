@@ -7,57 +7,64 @@ import { cookies } from "next/headers"
 import type { HealthRecord } from "@/lib/supabase/database.types"
 
 export async function getHealthRecords() {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  try {
+    const supabase = createServerClient()
 
-  const { data: session, error: sessionError } = await supabase.auth.getSession()
-  if (sessionError || !session.session?.user.id) {
-    return { success: false, error: "Not authenticated", data: [] }
-  }
+    const { data: session, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError || !session.session?.user.id) {
+      return { success: false, error: "Not authenticated", data: [] }
+    }
 
-  const userId = session.session.user.id
+    const userId = session.session.user.id
 
-  const { data, error } = await supabase
-    .from("health_records")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
+    const { data, error } = await supabase
+      .from("health_records")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
 
-  if (error) {
+    if (error) {
+      console.error("Error fetching health records:", error)
+      return { success: false, error: error.message, data: [] }
+    }
+
+    return { success: true, data: data as HealthRecord[] }
+  } catch (error) {
     console.error("Error fetching health records:", error)
-    return { success: false, error: error.message, data: [] }
+    return { success: false, error: error instanceof Error ? error.message : "An error occurred", data: [] }
   }
-
-  return { success: true, data: data as HealthRecord[] }
 }
 
 export async function getHealthRecordById(id: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  try {
+    const supabase = createServerClient()
 
-  const { data: session, error: sessionError } = await supabase.auth.getSession()
-  if (sessionError || !session.session?.user.id) {
-    return { success: false, error: "Not authenticated", data: null }
-  }
+    const { data: session, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError || !session.session?.user.id) {
+      return { success: false, error: "Not authenticated", data: null }
+    }
 
-  const { data, error } = await supabase
-    .from("health_records")
-    .select("*")
-    .eq("id", id)
-    .eq("user_id", session.session.user.id)
-    .single()
+    const { data, error } = await supabase
+      .from("health_records")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", session.session.user.id)
+      .single()
 
-  if (error) {
+    if (error) {
+      console.error("Error fetching health record:", error)
+      return { success: false, error: error.message, data: null }
+    }
+
+    return { success: true, data: data as HealthRecord }
+  } catch (error) {
     console.error("Error fetching health record:", error)
-    return { success: false, error: error.message, data: null }
+    return { success: false, error: error instanceof Error ? error.message : "An error occurred", data: null }
   }
-
-  return { success: true, data: data as HealthRecord }
 }
 
 export async function createHealthRecord(formData: FormData) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createServerClient()
 
   const { data: session, error: sessionError } = await supabase.auth.getSession()
   if (sessionError || !session.session?.user.id) {
@@ -109,8 +116,7 @@ export async function createHealthRecord(formData: FormData) {
 }
 
 export async function updateHealthRecord(id: string, formData: FormData) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createServerClient()
 
   const { data: session, error: sessionError } = await supabase.auth.getSession()
   if (sessionError || !session.session?.user.id) {
@@ -159,8 +165,7 @@ export async function updateHealthRecord(id: string, formData: FormData) {
 }
 
 export async function deleteHealthRecord(id: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createServerClient()
 
   const { data: session, error: sessionError } = await supabase.auth.getSession()
   if (sessionError || !session.session?.user.id) {

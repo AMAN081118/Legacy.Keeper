@@ -101,7 +101,7 @@ export function AddAccountModal({ isOpen, onClose, onSuccess, userId }: AddAccou
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-xl">
         <DialogHeader>
           <DialogTitle>Add New Account</DialogTitle>
           <DialogDescription>Add a new digital account to keep track of your login details securely.</DialogDescription>
@@ -132,7 +132,7 @@ export function AddAccountModal({ isOpen, onClose, onSuccess, userId }: AddAccou
             <Label htmlFor="passwordPhone">Password/Phone Number</Label>
             <Input
               id="passwordPhone"
-              type="password"
+              type="text"
               value={passwordPhone}
               onChange={(e) => setPasswordPhone(e.target.value)}
               placeholder="Enter password or phone number"

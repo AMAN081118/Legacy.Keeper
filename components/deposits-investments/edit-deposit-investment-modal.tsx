@@ -51,6 +51,7 @@ export function EditDepositInvestmentModal({
   )
   const [status, setStatus] = useState<string>(depositInvestment.status)
   const [attachment, setAttachment] = useState<File | null>(null)
+  const [removeAttachment, setRemoveAttachment] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
 
@@ -67,7 +68,13 @@ export function EditDepositInvestmentModal({
     setExpectedReturns(depositInvestment.expected_returns !== null ? depositInvestment.expected_returns.toString() : "")
     setStatus(depositInvestment.status)
     setAttachment(null)
+    setRemoveAttachment(false)
   }, [depositInvestment])
+
+  const handleRemoveAttachment = () => {
+    setAttachment(null)
+    setRemoveAttachment(true)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,18 +88,11 @@ export function EditDepositInvestmentModal({
       formData.append("description", description)
       formData.append("paidTo", paidTo)
       formData.append("date", date ? date.toISOString() : new Date().toISOString())
-      if (maturityDate) {
-        formData.append("maturityDate", maturityDate.toISOString())
-      }
-      if (interestRate) {
-        formData.append("interestRate", interestRate)
-      }
-      if (expectedReturns) {
-        formData.append("expectedReturns", expectedReturns)
-      }
-      formData.append("status", status)
-      if (attachment) {
+      if (attachment && attachment.size > 0) {
         formData.append("attachment", attachment)
+      }
+      if (removeAttachment) {
+        formData.append("removeAttachment", "true")
       }
 
       const result = await updateDepositInvestment(depositInvestment.id, formData)
@@ -192,65 +192,6 @@ export function EditDepositInvestmentModal({
                 </PopoverContent>
               </Popover>
             </div>
-            <div className="space-y-2">
-              <Label>Maturity Date (Optional)</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !maturityDate && "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {maturityDate ? format(maturityDate, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={maturityDate} onSelect={setMaturityDate} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="interestRate">Interest Rate (%) (Optional)</Label>
-              <Input
-                id="interestRate"
-                type="number"
-                min="0"
-                step="0.01"
-                value={interestRate}
-                onChange={(e) => setInterestRate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="expectedReturns">Expected Returns (Optional)</Label>
-              <Input
-                id="expectedReturns"
-                type="number"
-                min="0"
-                step="0.01"
-                value={expectedReturns}
-                onChange={(e) => setExpectedReturns(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={setStatus} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Matured">Matured</SelectItem>
-                <SelectItem value="Withdrawn">Withdrawn</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="space-y-2">
@@ -266,23 +207,49 @@ export function EditDepositInvestmentModal({
 
           <div className="space-y-2">
             <Label>Attachment</Label>
-            <FileUpload
-              onFileSelect={(file) => setAttachment(file)}
-              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-              maxSize={5 * 1024 * 1024} // 5MB
-            />
-            {depositInvestment.attachment_url && !attachment && (
-              <div className="text-sm text-muted-foreground mt-1">
-                Current file:{" "}
-                <a
-                  href={depositInvestment.attachment_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
+            {attachment && attachment.size > 0 ? (
+              <div className="border rounded-md p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-600 text-xs font-medium">{attachment.name}</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-500"
+                  onClick={handleRemoveAttachment}
                 >
-                  View attachment
-                </a>
+                  Remove
+                </Button>
               </div>
+            ) : depositInvestment.attachment_url && !removeAttachment ? (
+              <div className="border rounded-md p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <a
+                    href={depositInvestment.attachment_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline text-xs"
+                  >
+                    View current attachment
+                  </a>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-500"
+                  onClick={handleRemoveAttachment}
+                >
+                  Remove
+                </Button>
+              </div>
+            ) : (
+              <FileUpload
+                onFileChange={(file) => setAttachment(file)}
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                maxSize={5 * 1024 * 1024}
+              />
             )}
           </div>
 

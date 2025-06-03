@@ -84,17 +84,17 @@ export function NomineeCard({ nominee, onEdit, onDelete }: NomineeCardProps) {
       {/* Avatar area with icons */}
       <div className="relative w-full flex flex-col items-center pt-6 pb-2 bg-gray-100 rounded-t-xl">
         <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-          {nominee.profile_photo_url ? (
+            {nominee.profile_photo_url ? (
             <Image
               src={nominee.profile_photo_url}
-              alt={nominee.name}
+                alt={nominee.name}
               width={96}
               height={96}
-              className="h-full w-full object-cover"
-            />
-          ) : (
+                className="h-full w-full object-cover"
+              />
+            ) : (
             <UserCircle className="h-16 w-16 text-gray-400" />
-          )}
+            )}
         </div>
         {/* Top right icons */}
         <div className="absolute top-3 right-3 flex gap-2">
@@ -135,7 +135,7 @@ export function NomineeCard({ nominee, onEdit, onDelete }: NomineeCardProps) {
       </div>
       {/* View icon at bottom right */}
       <div className="flex justify-end w-full px-6 pb-4">
-        <Button
+          <Button
           variant="ghost"
           size="icon"
           onClick={() => setViewOpen(true)}
@@ -143,7 +143,7 @@ export function NomineeCard({ nominee, onEdit, onDelete }: NomineeCardProps) {
           aria-label="View"
         >
           <Eye className="h-5 w-5" />
-        </Button>
+          </Button>
       </div>
       {/* View Modal */}
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>

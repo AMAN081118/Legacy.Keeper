@@ -8,7 +8,7 @@ import { getCurrentRoleFromSession } from "@/app/actions/user-roles"
 
 export default async function TransactionsPage() {
   const supabase = createServerClient()
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
 
   // Get the current user
   const {

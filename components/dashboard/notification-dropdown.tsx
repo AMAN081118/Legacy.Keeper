@@ -17,11 +17,21 @@ import { resendInvitation } from "@/app/actions/nominees"
 import { useToast } from "@/components/ui/use-toast"
 import Link from "next/link"
 
+async function handleNomineeRequestAction(nomineeId, action, fetchNotifications) {
+  await fetch(`/api/nominee-request-action`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nomineeId, action }),
+  });
+  fetchNotifications();
+}
+
 export function NotificationDropdown() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const { toast } = useToast()
+  const [loadingAction, setLoadingAction] = useState<string | null>(null)
 
   const fetchNotifications = async () => {
     setLoading(true)
@@ -85,13 +95,38 @@ export function NotificationDropdown() {
   const handleDeleteNotification = async (id: string) => {
     const result = await deleteNotification(id)
     if (result.success) {
-      setNotifications((prev) => prev.filter((n) => n.id !== id))
+    setNotifications((prev) => prev.filter((n) => n.id !== id))
     } else {
       toast({
         title: "Error",
         description: "Failed to delete notification.",
         variant: "destructive",
       })
+    }
+  }
+
+  const handleRequestAction = async (notificationId: string, action: "accept" | "reject") => {
+    setLoadingAction(notificationId + action)
+    try {
+      const res = await fetch("/api/nominee-request-action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationId, action }),
+      })
+      if (res.ok) {
+        setNotifications((prev: any) => prev.map((n: any) => n.id === notificationId ? { ...n, read: true } : n))
+        toast({
+          title: `Request ${action === "accept" ? "Accepted" : "Rejected"}`,
+          description: `You have ${action === "accept" ? "accepted" : "rejected"} the nominee's access request.`,
+          variant: action === "accept" ? "success" : "destructive",
+        })
+      } else {
+        alert("Failed to process request")
+      }
+    } catch (e) {
+      alert("Error processing request")
+    } finally {
+      setLoadingAction(null)
     }
   }
 
@@ -137,10 +172,10 @@ export function NotificationDropdown() {
                     )}
                     {notification.type === "invitation_received" && notification.data?.invitationLink && (
                       <Link href={notification.data.invitationLink} passHref>
-                        <Button variant="default" size="sm" className="mt-2 text-xs">
+                            <Button variant="default" size="sm" className="mt-2 text-xs">
                           View Invitation
-                        </Button>
-                      </Link>
+                            </Button>
+                          </Link>
                     )}
                     <p className="text-xs text-gray-400 mt-1">
                       {notification.created_at ? new Date(notification.created_at).toLocaleString() : "No date"}
@@ -171,6 +206,44 @@ export function NotificationDropdown() {
                           View Request
                         </Button>
                       </Link>
+                    )}
+                    {notification.type === "nominee_request" && notification.data?.nomineeId && (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="success"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => handleNomineeRequestAction(notification.data.nomineeId, 'accept', fetchNotifications)}
+                        >
+                          Accept
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => handleNomineeRequestAction(notification.data.nomineeId, 'reject', fetchNotifications)}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    )}
+                    {notification.type === "invitation_received" && notification.title === "Nominee Access Request" && (
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          className="px-3 py-1 rounded bg-green-500 text-white disabled:opacity-50"
+                          disabled={!!loadingAction}
+                          onClick={() => handleRequestAction(notification.id, "accept")}
+                        >
+                          {loadingAction === notification.id + "accept" ? "Accepting..." : "Accept"}
+                        </button>
+                        <button
+                          className="px-3 py-1 rounded bg-red-500 text-white disabled:opacity-50"
+                          disabled={!!loadingAction}
+                          onClick={() => handleRequestAction(notification.id, "reject")}
+                        >
+                          {loadingAction === notification.id + "reject" ? "Rejecting..." : "Reject"}
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

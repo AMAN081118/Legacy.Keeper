@@ -23,9 +23,10 @@ interface EditDebtLoanModalProps {
   isOpen: boolean
   onClose: () => void
   debtLoan: DebtLoan
+  onSuccess?: () => void
 }
 
-export function EditDebtLoanModal({ isOpen, onClose, debtLoan }: EditDebtLoanModalProps) {
+export function EditDebtLoanModal({ isOpen, onClose, debtLoan, onSuccess }: EditDebtLoanModalProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [transactionType, setTransactionType] = useState<"Given" | "Received">(debtLoan.transaction_type)
@@ -44,6 +45,7 @@ export function EditDebtLoanModal({ isOpen, onClose, debtLoan }: EditDebtLoanMod
     status: debtLoan.status,
     attachment_url: debtLoan.attachment_url || "",
   })
+  const [removeAttachment, setRemoveAttachment] = useState(false)
 
   useEffect(() => {
     // Update form data when debtLoan changes
@@ -76,6 +78,13 @@ export function EditDebtLoanModal({ isOpen, onClose, debtLoan }: EditDebtLoanMod
     }
   }
 
+  const handleRemoveAttachment = () => {
+    setSelectedFile(null)
+    setFileName("")
+    setFormData((prev) => ({ ...prev, attachment_url: "" }))
+    setRemoveAttachment(true)
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
@@ -103,7 +112,7 @@ export function EditDebtLoanModal({ isOpen, onClose, debtLoan }: EditDebtLoanMod
 
         // Upload the file
         const { error: uploadError } = await supabase.storage
-          .from("debts_loans_documents")
+          .from("debts-loans-documents")
           .upload(filePath, selectedFile)
 
         if (uploadError) {
@@ -111,7 +120,7 @@ export function EditDebtLoanModal({ isOpen, onClose, debtLoan }: EditDebtLoanMod
         }
 
         // Get the public URL
-        const { data: urlData } = supabase.storage.from("debts_loans_documents").getPublicUrl(filePath)
+        const { data: urlData } = supabase.storage.from("debts-loans-documents").getPublicUrl(filePath)
         attachmentUrl = urlData.publicUrl
       }
 
@@ -142,9 +151,11 @@ export function EditDebtLoanModal({ isOpen, onClose, debtLoan }: EditDebtLoanMod
         description: "Debt/loan entry updated successfully.",
       })
 
-      // Close the modal and refresh the page
+      // Instead of router.refresh(), call onSuccess if provided
+      if (typeof onSuccess === "function") {
+        await onSuccess()
+      }
       onClose()
-      router.refresh()
     } catch (error: any) {
       console.error("Error updating debt/loan:", error)
       toast({
@@ -228,7 +239,7 @@ export function EditDebtLoanModal({ isOpen, onClose, debtLoan }: EditDebtLoanMod
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="amount_due">Amount Due On</Label>
+              <Label htmlFor="amount_due">Amount Due</Label>
               <Input
                 id="amount_due"
                 name="amount_due"
@@ -286,7 +297,7 @@ export function EditDebtLoanModal({ isOpen, onClose, debtLoan }: EditDebtLoanMod
               <Label htmlFor="status">Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value as "Active" | "Completed" | "Defaulted" }))}
               >
                 <SelectTrigger id="status">
                   <SelectValue placeholder="Select status" />
@@ -346,45 +357,52 @@ export function EditDebtLoanModal({ isOpen, onClose, debtLoan }: EditDebtLoanMod
 
           <div className="space-y-2">
             <Label>Attachment</Label>
-            {formData.attachment_url && (
-              <div className="mb-2">
-                <p className="text-sm">
-                  Current attachment:
-                  <a
-                    href={formData.attachment_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-1 text-blue-600 hover:underline"
-                  >
-                    View
-                  </a>
-                </p>
-              </div>
-            )}
-            <div className="border-2 border-dashed border-blue-300 rounded-md p-6 text-center">
-              <div className="flex flex-col items-center justify-center">
-                <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                <p className="text-sm font-medium">Drag & Drop files here</p>
-                <p className="text-xs text-muted-foreground mt-1">Supported format : pdf, jpg, jpeg.</p>
-                <p className="text-xs text-muted-foreground mt-1">Or</p>
+            {formData.attachment_url && !removeAttachment ? (
+              <div className="mb-2 flex items-center justify-between border rounded-md p-2">
+                <a
+                  href={formData.attachment_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline text-xs"
+                >
+                  View current attachment
+                </a>
                 <Button
                   type="button"
-                  variant="secondary"
-                  className="mt-2 bg-[#0a2642] text-white hover:bg-[#0a2642]/90"
-                  onClick={() => document.getElementById("file-upload-edit")?.click()}
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-500"
+                  onClick={handleRemoveAttachment}
                 >
-                  Browse Files
+                  Remove
                 </Button>
-                <input
-                  id="file-upload-edit"
-                  type="file"
-                  className="hidden"
-                  accept=".pdf,.jpg,.jpeg"
-                  onChange={handleFileChange}
-                />
-                {fileName && <p className="text-xs mt-2 text-green-600">New file selected: {fileName}</p>}
               </div>
-            </div>
+            ) : (
+              <div className="border-2 border-dashed border-blue-300 rounded-md p-6 text-center">
+                <div className="flex flex-col items-center justify-center">
+                  <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                  <p className="text-sm font-medium">Drag & Drop files here</p>
+                  <p className="text-xs text-muted-foreground mt-1">Supported format : pdf, jpg, jpeg.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Or</p>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="mt-2 bg-[#0a2642] text-white hover:bg-[#0a2642]/90"
+                    onClick={() => document.getElementById("file-upload-edit")?.click()}
+                  >
+                    Browse Files
+                  </Button>
+                  <input
+                    id="file-upload-edit"
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.jpg,.jpeg"
+                    onChange={handleFileChange}
+                  />
+                  {fileName && <p className="text-xs mt-2 text-green-600">New file selected: {fileName}</p>}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">

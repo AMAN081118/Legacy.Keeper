@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { format } from "date-fns"
-import { Eye, Pencil, Trash2 } from "lucide-react"
+import { DownloadIcon, Eye, Pencil, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { HealthRecord } from "@/lib/supabase/database.types"
 import { ViewMemberModal } from "./view-member-modal"
@@ -10,6 +10,8 @@ import { EditMemberModal } from "./edit-member-modal"
 import { DeleteMemberModal } from "./delete-member-modal"
 import { Input } from "@/components/ui/input"
 import { Pagination } from "@/components/ui/pagination"
+import { Button } from "@/components/ui/button"
+import { exportToCSV } from "@/utils/csv-export"
 
 interface HealthRecordsTableProps {
   healthRecords: HealthRecord[]
@@ -53,6 +55,22 @@ export function HealthRecordsTable({ healthRecords }: HealthRecordsTableProps) {
     router.push(`/dashboard/health-records/${recordId}`)
   }
 
+  const handleExportCSV = () => {
+    const csvData = healthRecords.map((record) => ({
+      Date: formatDate(record.created_at),
+      "Member Name": record.member_name,
+      Gender: record.gender || "N/A",
+      "Date of Birth": formatDate(record.dob),
+      "Contact Number": record.contact_number || "N/A",
+      "Blood Group": record.blood_group || "N/A",
+      "Emergency Contact": record.emergency_contact || "N/A",
+      "Medical Conditions": record.medical_conditions || "N/A",
+      Allergies: record.allergies || "N/A",
+      Medications: record.medications || "N/A",
+    }))
+    exportToCSV(csvData, "health_records")
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -62,12 +80,10 @@ export function HealthRecordsTable({ healthRecords }: HealthRecordsTableProps) {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-xs"
         />
-        <a
-          href="#"
-          className="inline-flex items-center justify-center rounded-md bg-[#0a2642] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#0a2642]/90"
-        >
+        <Button variant="outline" className="flex items-center gap-2" onClick={handleExportCSV}>
+          <DownloadIcon className="h-4 w-4" />
           Download
-        </a>
+        </Button>
       </div>
 
       <div className="rounded-md border">

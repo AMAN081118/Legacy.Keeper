@@ -14,7 +14,7 @@ interface FamilyMemberDetailPageProps {
 export default async function FamilyMemberDetailPage({ params }: FamilyMemberDetailPageProps) {
   const { id } = params
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerClient(cookieStore)
 
   const {

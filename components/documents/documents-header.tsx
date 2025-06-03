@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Download, Plus, Search } from "lucide-react"
+import { Plus, Search } from "lucide-react"
 
 interface DocumentsHeaderProps {
   onAddNew: () => void
@@ -25,9 +25,6 @@ export function DocumentsHeader({ onAddNew, onSearch, searchQuery, documentsCoun
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search" className="pl-8" value={searchQuery} onChange={(e) => onSearch(e.target.value)} />
         </div>
-        <Button variant="outline">
-          <Download className="mr-2 h-4 w-4" /> Download
-        </Button>
       </div>
     </div>
   )

@@ -14,6 +14,7 @@ import { FileUpload } from "@/components/file-upload"
 import { useToast } from "@/components/ui/use-toast"
 import type { Reminder } from "@/lib/supabase/database.types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FileText } from "lucide-react"
 
 interface EditReminderModalProps {
   reminder: Reminder
@@ -114,12 +115,12 @@ export function EditReminderModal({ reminder, onClose, onUpdate }: EditReminderM
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Reminder</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid grid-cols-1 gap-4">
+        <form onSubmit={handleSubmit} className="grid gap-6 py-4">
+          <div className="grid grid-cols-2 gap-6">
             <div className="grid gap-2">
               <Label htmlFor="reminderName">Reminder Name</Label>
               <Input
@@ -128,13 +129,14 @@ export function EditReminderModal({ reminder, onClose, onUpdate }: EditReminderM
                 placeholder="Enter reminder name"
                 defaultValue={reminder.reminder_name}
                 required
+                className="w-full"
               />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="category">Category</Label>
               <Select name="category" defaultValue={reminder.category || categories[0]}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -155,13 +157,14 @@ export function EditReminderModal({ reminder, onClose, onUpdate }: EditReminderM
                 type="date"
                 required
                 defaultValue={formatDateForInput(reminder.start_date)}
+                className="w-full"
               />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="frequency">Frequency (days)</Label>
               <Select name="frequency" defaultValue={reminder.frequency?.toString() || frequencies[2].value}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select frequency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -174,34 +177,41 @@ export function EditReminderModal({ reminder, onClose, onUpdate }: EditReminderM
               </Select>
             </div>
 
-            <div className="grid gap-2">
+            <div className="col-span-2 grid gap-2">
               <Label htmlFor="notes">Notes</Label>
               <Textarea
                 id="notes"
                 name="notes"
                 placeholder="Enter notes"
-                className="min-h-[100px]"
+                className="min-h-[100px] w-full"
                 defaultValue={reminder.notes || ""}
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>Attach Documents</Label>
-              {reminder.attachment_url && (
-                <div className="text-sm mb-2">
-                  Current file:
-                  <a
-                    href={reminder.attachment_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-1 text-blue-600 hover:underline"
-                  >
-                    View
-                  </a>
+            <div className="col-span-2 grid gap-2">
+              <Label>Attachment</Label>
+              <div className="space-y-2">
+                {reminder.attachment_url ? (
+                  <div className="text-sm">
+                    Current file:
+                    <a
+                      href={reminder.attachment_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-1 flex items-center gap-1 text-blue-600 hover:underline"
+                    >
+                      <FileText className="h-4 w-4" />
+                      View Attachment
+                    </a>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No file attached</div>
+                )}
+                <div className="mt-2">
+                  <FileUpload name="file" maxSize={5 * 1024 * 1024} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                  <p className="text-xs text-muted-foreground mt-1">Upload a new file to replace the current one (optional)</p>
                 </div>
-              )}
-              <FileUpload name="file" maxSize={5} supportedFileTypes={["pdf", "jpg", "jpeg", "png", "doc", "docx"]} />
-              <p className="text-xs text-muted-foreground">Upload a new file to replace the current one (optional)</p>
+              </div>
             </div>
           </div>
 

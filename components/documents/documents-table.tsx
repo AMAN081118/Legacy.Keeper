@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import type { Document } from "@/lib/supabase/database.types"
-import { Eye, Pencil, Trash2 } from "lucide-react"
+import { Eye, Pencil, Trash2, Download } from "lucide-react"
 import { EmptyState } from "./empty-state"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
@@ -26,6 +26,36 @@ export function DocumentsTable({ documents, onEdit, onDelete, onView }: Document
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
 
+  const handleDownloadCSV = () => {
+    // Define CSV headers
+    const headers = ["Title", "Description", "Document Type", "Created At", "Updated At"]
+    
+    // Convert documents to CSV rows
+    const csvRows = documents.map(doc => [
+      doc.title,
+      doc.description || "",
+      doc.document_type,
+      new Date(doc.created_at).toLocaleString(),
+      new Date(doc.updated_at).toLocaleString()
+    ])
+    
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(","),
+      ...csvRows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n")
+    
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", `documents_${new Date().toISOString().split("T")[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   if (documents.length === 0) {
     return <EmptyState />
   }
@@ -37,6 +67,17 @@ export function DocumentsTable({ documents, onEdit, onDelete, onView }: Document
 
   return (
     <div className="rounded-lg border bg-white">
+      <div className="p-4 border-b flex justify-end">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleDownloadCSV}
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Download CSV
+        </Button>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>

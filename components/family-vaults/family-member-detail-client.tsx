@@ -127,7 +127,7 @@ export function FamilyMemberDetailClient({ member, documents: initialDocuments }
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Documents ({documents.length})</h2>
             <Button className="flex items-center gap-1" onClick={() => setIsAddDocModalOpen(true)}>
-              <Plus className="h-4 w-4" />+ Add New Document
+              <Plus className="h-4 w-4" /> Add New Document
             </Button>
           </div>
 
@@ -204,12 +204,6 @@ export function FamilyMemberDetailClient({ member, documents: initialDocuments }
               <div className="text-center">
                 <h3 className="mt-2 text-lg font-medium">No Documents Found</h3>
                 <p className="mt-1 text-sm text-muted-foreground">Get started by adding a new document.</p>
-                <div className="mt-6">
-                  <Button className="flex items-center gap-2" onClick={() => setIsAddDocModalOpen(true)}>
-                    <Plus className="h-4 w-4" />
-                    Add New Document
-                  </Button>
-                </div>
               </div>
             </div>
           )}

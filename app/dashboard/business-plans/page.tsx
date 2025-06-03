@@ -12,7 +12,7 @@ export default async function BusinessPlansPage() {
   await setupStorage()
 
   const supabase = createServerClient()
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const {
     data: { session },
   } = await supabase.auth.getSession()

@@ -52,7 +52,7 @@ export function DeleteDebtLoanModal({ isOpen, onClose, debtLoan }: DeleteDebtLoa
           const filePath = `${user.id}/${fileName}`
 
           // Delete the file
-          const { error: deleteError } = await supabase.storage.from("debts_loans_documents").remove([filePath])
+          const { error: deleteError } = await supabase.storage.from("debts-loans-documents").remove([filePath])
 
           if (deleteError) {
             console.error("Error deleting file:", deleteError)

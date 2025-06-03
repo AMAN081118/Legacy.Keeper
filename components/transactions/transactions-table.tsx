@@ -214,6 +214,7 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
         .insert({
           user_id: user.id,
           name: newTransaction.name || "",
+          person: newTransaction.person || "",
           amount: newTransaction.amount || 0,
           transaction_type: newTransaction.transaction_type || "Paid",
           payment_mode: newTransaction.payment_mode || "Cash",
@@ -258,6 +259,7 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
         .from("transactions")
         .update({
           name: updatedTransaction.name,
+          person: updatedTransaction.person,
           amount: updatedTransaction.amount,
           transaction_type: updatedTransaction.transaction_type,
           payment_mode: updatedTransaction.payment_mode,
@@ -435,7 +437,7 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
                 currentTransactions.map((transaction) => (
                   <tr key={transaction.id} className="border-b text-sm hover:bg-gray-50">
                     <td className="px-4 py-3">{transaction.name}</td>
-                    <td className="px-4 py-3">{transaction.name.split(" ")[0].toLowerCase()}</td>
+                    <td className="px-4 py-3">{transaction.person || "N/A"}</td>
                     <td className="px-4 py-3">{transaction.payment_mode || "N/A"}</td>
                     <td className="px-4 py-3">₹{Number(transaction.amount).toLocaleString()}</td>
                     <td className="px-4 py-3">

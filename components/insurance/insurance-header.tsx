@@ -11,7 +11,7 @@ export function InsuranceHeader({ count }: { count: number }) {
           <p className="text-muted-foreground">View Insurance Details here!!</p>
         </div>
         <AddInsuranceModal>
-          <Button className="bg-blue-900 hover:bg-blue-800">
+          <Button>
             <PlusIcon className="mr-2 h-4 w-4" />
             Add New Insurance
           </Button>

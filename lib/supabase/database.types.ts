@@ -664,6 +664,10 @@ export interface Database {
           profile_photo_url: string | null
           government_id_url: string | null
           approval_type: string
+          status: string
+          invitation_token: string | null
+          invitation_sent_at: string | null
+          invitation_responded_at: string | null
           created_at: string
           updated_at: string
         }
@@ -677,6 +681,10 @@ export interface Database {
           profile_photo_url?: string | null
           government_id_url?: string | null
           approval_type: string
+          status?: string
+          invitation_token?: string | null
+          invitation_sent_at?: string | null
+          invitation_responded_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -690,6 +698,10 @@ export interface Database {
           profile_photo_url?: string | null
           government_id_url?: string | null
           approval_type?: string
+          status?: string
+          invitation_token?: string | null
+          invitation_sent_at?: string | null
+          invitation_responded_at?: string | null
           created_at?: string
           updated_at?: string
         }

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { DepositsInvestmentsHeader } from "./deposits-investments-header";
 import { DepositsInvestmentsTabs } from "./deposits-investments-tabs";
 import { DepositsInvestmentsTable } from "./deposits-investments-table";
-import { DepositsInvestmentsFilter } from "./deposits-investments-filter";
 import { getDepositsInvestments, getDepositsInvestmentsStats } from "@/app/actions/deposits-investments";
 import type { DepositInvestment } from "@/lib/supabase/database.types";
 import { Toaster } from "@/components/ui/toaster";
@@ -99,9 +98,13 @@ export default function DepositsInvestmentsClient({ initialDeposits, initialStat
 
   return (
     <div className="space-y-6">
-      <DepositsInvestmentsHeader totalAmount={stats.totalAmount} count={stats.count} onRefresh={handleRefresh} />
+      <DepositsInvestmentsHeader 
+        totalAmount={stats.totalAmount} 
+        count={stats.count} 
+        onRefresh={handleRefresh}
+        depositsInvestments={depositsInvestments}
+      />
       <DepositsInvestmentsTabs activeTab={activeTab} onTabChange={handleTabChange} />
-      <DepositsInvestmentsFilter onSearch={handleSearch} />
       <DepositsInvestmentsTable
         depositsInvestments={filteredDepositsInvestments}
         loading={loading}

@@ -1,13 +1,22 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createClient } from "@/lib/supabase/client"
 
 export type CurrentRole = {
   id: string;
   name: string;
   description?: string;
-  relatedUser?: { name: string | null; email: string | null } | null;
+  relatedUser?: {
+    id: string;
+    name: string | null;
+    email: string | null;
+  };
   accessCategories?: string[];
+  user?: {
+    email: string | null;
+    name: string | null;
+  };
 };
 
 type RoleContextType = {
@@ -25,27 +34,54 @@ export function useRole() {
 
 export function RoleProvider({ children }: { children: ReactNode }) {
   const [currentRole, setCurrentRoleState] = useState<CurrentRole | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
-  // Optionally persist in sessionStorage
+  // On mount or when user changes, validate or reset role
   useEffect(() => {
-    const stored = sessionStorage.getItem("currentRole");
-    if (stored) {
-      try {
-        setCurrentRoleState(JSON.parse(stored));
-      } catch {}
+    async function validateOrResetRole() {
+      const supabase = createClient();
+      const { data: userData } = await supabase.auth.getUser();
+      const userEmail = userData?.user?.email || null;
+      setCurrentUserEmail(userEmail);
+      const storedRole = sessionStorage.getItem("currentRole");
+      const storedRoleUser = sessionStorage.getItem("currentRoleUser");
+      if (userEmail && storedRole && storedRoleUser === userEmail) {
+        // Use the stored role for this user
+        try {
+          setCurrentRoleState(JSON.parse(storedRole));
+        } catch {
+          setCurrentRoleState({ id: "user", name: "user" });
+          sessionStorage.setItem("currentRole", JSON.stringify({ id: "user", name: "user" }));
+          sessionStorage.setItem("currentRoleUser", userEmail);
+        }
+      } else {
+        // New user or no stored role, default to user
+        setCurrentRoleState({ id: "user", name: "user" });
+        if (userEmail) {
+          sessionStorage.setItem("currentRole", JSON.stringify({ id: "user", name: "user" }));
+          sessionStorage.setItem("currentRoleUser", userEmail);
+        } else {
+          sessionStorage.removeItem("currentRole");
+          sessionStorage.removeItem("currentRoleUser");
+        }
+      }
     }
+    validateOrResetRole();
   }, []);
 
   useEffect(() => {
-    if (currentRole) {
+    if (currentRole && currentUserEmail) {
       sessionStorage.setItem("currentRole", JSON.stringify(currentRole));
-    } else {
-      sessionStorage.removeItem("currentRole");
+      sessionStorage.setItem("currentRoleUser", currentUserEmail);
     }
-  }, [currentRole]);
+  }, [currentRole, currentUserEmail]);
 
   const setCurrentRole = (role: CurrentRole | null) => {
     setCurrentRoleState(role);
+    if (role && currentUserEmail) {
+      sessionStorage.setItem("currentRole", JSON.stringify(role));
+      sessionStorage.setItem("currentRoleUser", currentUserEmail);
+    }
   };
 
   return (

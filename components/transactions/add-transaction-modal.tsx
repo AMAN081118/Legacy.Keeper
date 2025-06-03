@@ -29,6 +29,7 @@ interface AddTransactionModalProps {
 export function AddTransactionModal({ isOpen, onClose, onSave }: AddTransactionModalProps) {
   const [transaction, setTransaction] = useState<Partial<Tables<"transactions">>>({
     name: "",
+    person: "",
     amount: 0,
     transaction_type: "Paid",
     payment_mode: "Phone Pay",
@@ -155,8 +156,8 @@ export function AddTransactionModal({ isOpen, onClose, onSave }: AddTransactionM
               <Label htmlFor="person-party">Person/Party</Label>
               <Input
                 id="person-party"
-                value={transaction.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
+                value={transaction.person}
+                onChange={(e) => handleInputChange("person", e.target.value)}
                 placeholder="Netflix"
               />
             </div>

@@ -84,11 +84,11 @@ export function AddBusinessPlanModal() {
   return (
     <>
       <div onClick={() => handleOpenChange(true)}>
-        <Button className="bg-blue-900 text-white hover:bg-blue-800">+ Add New Business Plan</Button>
+        <Button>+ Add New Business Plan</Button>
       </div>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-xl">
           <DialogHeader>
             <DialogTitle>Add New Business Plan</DialogTitle>
           </DialogHeader>
@@ -154,6 +154,9 @@ export function AddBusinessPlanModal() {
                   accept=".pdf,.jpg,.jpeg,.png"
                   maxSize={5 * 1024 * 1024} // 5MB
                 />
+                {file && (
+                  <p className="text-xs text-green-600">Selected: {file.name}</p>
+                )}
               </div>
             </div>
 

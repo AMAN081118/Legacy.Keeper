@@ -22,8 +22,7 @@ export type Notification = {
 
 export async function getNotifications(): Promise<Notification[]> {
   try {
-    const cookieStore = cookies();
-    const supabase = createServerClient(cookieStore);
+    const supabase = createServerClient();
 
     const { data: user, error: userError } = await supabase.auth.getUser();
     if (userError || !user.user) {
@@ -100,5 +99,32 @@ export async function deleteNotification(id: string) {
     return { success: true };
   } catch (error) {
     return { success: false };
+  }
+}
+
+export async function markNotificationAsRead(id: string) {
+  try {
+    const supabase = createServerClient();
+    // ... existing code ...
+  } catch (error) {
+    // ... existing code ...
+  }
+}
+
+export async function markAllNotificationsAsRead() {
+  try {
+    const supabase = createServerClient();
+    // ... existing code ...
+  } catch (error) {
+    // ... existing code ...
+  }
+}
+
+export async function getUnreadNotificationCount() {
+  try {
+    const supabase = createServerClient();
+    // ... existing code ...
+  } catch (error) {
+    // ... existing code ...
   }
 }

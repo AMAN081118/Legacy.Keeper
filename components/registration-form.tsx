@@ -84,28 +84,50 @@ export function RegistrationForm({ onSwitchToLogin }: { onSwitchToLogin?: () => 
 
       if (signUpError) throw signUpError
 
-      // For testing purposes, let's automatically confirm the email
-      // In a production environment, you would remove this and let users confirm their email
-      try {
-        // Create a server-side API call to confirm the email
-        const response = await fetch("/api/auth/confirm-email", {
+      // Create user profile in the users table
+      if (data.user) {
+        const response = await fetch("/api/auth/register", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email: formData.email,
+            userId: data.user.id,
+            userData: {
+              name: formData.name,
+              email: formData.email,
+              phone: `+${formData.countryCode}${formData.phone}`,
+              dob: formData.dob,
+              gender: gender,
+              government_id_url: formData.governmentIdUrl,
+            },
           }),
         })
 
         if (!response.ok) {
           const result = await response.json()
-          console.warn("Email confirmation warning:", result.error)
-          // We'll continue even if this fails
+          throw new Error(result.error || "Failed to create user profile")
         }
-      } catch (confirmError) {
-        console.warn("Email confirmation warning:", confirmError)
-        // We'll continue even if this fails
+
+        // For testing purposes, let's automatically confirm the email
+        try {
+          const response = await fetch("/api/auth/confirm-email", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: formData.email,
+            }),
+          })
+
+          if (!response.ok) {
+            const result = await response.json()
+            console.warn("Email confirmation warning:", result.error)
+          }
+        } catch (confirmError) {
+          console.warn("Email confirmation warning:", confirmError)
+        }
       }
 
       toast({

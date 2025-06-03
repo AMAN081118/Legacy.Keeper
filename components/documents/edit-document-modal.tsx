@@ -44,16 +44,18 @@ export function EditDocumentModal({ open, onClose, onUpdate, document }: EditDoc
     setIsSubmitting(true)
 
     try {
+      // Always pass the file if present, so the backend uploads and updates the DB
       const result = await updateDocument({
         id: document.id,
         title,
         description,
         documentType,
-        file,
+        file, // If file is not null, backend will upload and update DB
       })
 
       if (result.success && result.data) {
         onUpdate(result.data)
+        onClose()
       } else {
         toast({
           title: "Error",
@@ -115,11 +117,10 @@ export function EditDocumentModal({ open, onClose, onUpdate, document }: EditDoc
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
               <Label className="text-right pt-2">Attach Documents</Label>
-              <div className="col-span-3">
-                <FileUpload onFileSelect={setFile} maxSize={10} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+              <div className="col-span-3 space-y-2">
+                <FileUpload onFileChange={setFile} maxSize={10} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
                 {document.attachment_url && !file && (
-                  <div className="mt-2 text-sm text-gray-500">
-                    Current file:{" "}
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
                     <a
                       href={document.attachment_url}
                       target="_blank"
@@ -128,8 +129,10 @@ export function EditDocumentModal({ open, onClose, onUpdate, document }: EditDoc
                     >
                       View current file
                     </a>
-                    <p className="mt-1">Upload a new file to replace the current one.</p>
                   </div>
+                )}
+                {file && (
+                  <div className="text-xs text-green-600">Selected: {file.name}</div>
                 )}
               </div>
             </div>

@@ -90,7 +90,7 @@ export default function ProfilePage() {
           {/* Editable fields */}
           {editableFields.map((field) => (
             <div key={field.key} className="flex items-center justify-between border-b pb-4">
-              <div>
+            <div>
                 <p className="text-sm font-medium text-gray-500">{field.label}</p>
                 {editingField === field.key ? (
                   <div className="flex items-center gap-2 mt-1">
@@ -128,7 +128,7 @@ export default function ProfilePage() {
                 {editingField === field.key && error && (
                   <p className="text-xs text-red-500 mt-1">{error}</p>
                 )}
-              </div>
+            </div>
               {editingField !== field.key && (
                 <button
                   className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm"

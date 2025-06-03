@@ -1,10 +1,79 @@
 "use server"
 
 import { createServerClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { v4 as uuidv4 } from "uuid"
 import { uploadFile } from "@/app/actions/upload"
-import { ensureBucketExists } from "@/lib/supabase/ensure-bucket"
+
+// Server-side function to ensure bucket exists
+async function ensureServerBucketExists(bucketName: string): Promise<boolean> {
+  try {
+    const adminClient = createAdminClient()
+    
+    // Check if bucket exists
+    const { data: buckets, error: bucketsError } = await adminClient.storage.listBuckets()
+    if (bucketsError) {
+      console.error("Error checking buckets:", bucketsError)
+      return false
+    }
+    
+    // If bucket exists, return true
+    if (buckets?.some((bucket) => bucket.name === bucketName)) {
+      return true
+    }
+    
+    // Create bucket if it doesn't exist
+    const { error: createError } = await adminClient.storage.createBucket(bucketName, {
+      public: false,
+      fileSizeLimit: 10485760, // 10MB
+    })
+    
+    if (createError) {
+      console.error("Error creating bucket:", createError)
+      return false
+    }
+
+    // Set up RLS policies for the bucket
+    try {
+      await adminClient.query(`
+        CREATE POLICY IF NOT EXISTS "Users can view their own documents"
+        ON storage.objects
+        FOR SELECT
+        USING (bucket_id = '${bucketName}' AND auth.uid()::text = (storage.foldername(name))[1]);
+      `)
+
+      await adminClient.query(`
+        CREATE POLICY IF NOT EXISTS "Users can upload their own documents"
+        ON storage.objects
+        FOR INSERT
+        WITH CHECK (bucket_id = '${bucketName}' AND auth.uid()::text = (storage.foldername(name))[1]);
+      `)
+
+      await adminClient.query(`
+        CREATE POLICY IF NOT EXISTS "Users can update their own documents"
+        ON storage.objects
+        FOR UPDATE
+        USING (bucket_id = '${bucketName}' AND auth.uid()::text = (storage.foldername(name))[1]);
+      `)
+
+      await adminClient.query(`
+        CREATE POLICY IF NOT EXISTS "Users can delete their own documents"
+        ON storage.objects
+        FOR DELETE
+        USING (bucket_id = '${bucketName}' AND auth.uid()::text = (storage.foldername(name))[1]);
+      `)
+    } catch (policyError) {
+      console.error("Error setting up bucket policies:", policyError)
+      // Continue even if policy setup fails
+    }
+    
+    return true
+  } catch (error) {
+    console.error(`Error ensuring ${bucketName} bucket exists:`, error)
+    return false
+  }
+}
 
 export async function addDocument({
   userId,
@@ -78,12 +147,14 @@ export async function updateDocument({
   description,
   documentType,
   file,
+  removeAttachment = false,
 }: {
   id: string
   title: string
   description: string
   documentType: string
   file: File | null
+  removeAttachment?: boolean
 }) {
   try {
     const supabase = createServerClient()
@@ -101,29 +172,41 @@ export async function updateDocument({
 
     let attachmentUrl = existingDocument.attachment_url
 
+    // Remove attachment if requested
+    if (removeAttachment && attachmentUrl) {
+      const filePath = attachmentUrl.split("/").pop()
+      if (filePath) {
+        const { error: deleteFileError } = await supabase.storage
+          .from("documents")
+          .remove([`${existingDocument.user_id}/${filePath}`])
+        if (deleteFileError) {
+          console.error("Error deleting file:", deleteFileError)
+        }
+      }
+      attachmentUrl = null
+    }
+
     // If there's a new file, upload it
     if (file) {
-      // Ensure the bucket exists
-      await ensureBucketExists("documents")
-
-      // Generate a unique file path
+      const bucketExists = await ensureServerBucketExists("documents")
+      if (!bucketExists) {
+        throw new Error("Failed to ensure documents bucket exists")
+      }
+      
       const fileExt = file.name.split(".").pop()
       const filePath = `${existingDocument.user_id}/${id}.${fileExt}`
-
-      // Upload the file
-      const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, file, {
+      // Convert File to ArrayBuffer for server upload
+      const arrayBuffer = await file.arrayBuffer()
+      const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, arrayBuffer, {
         upsert: true,
+        contentType: file.type,
       })
-
       if (uploadError) {
         throw new Error(`Error uploading file: ${uploadError.message}`)
       }
-
-      // Get the public URL
       const {
         data: { publicUrl },
       } = supabase.storage.from("documents").getPublicUrl(filePath)
-
       attachmentUrl = publicUrl
     }
 
@@ -144,7 +227,6 @@ export async function updateDocument({
     if (error) {
       throw new Error(`Error updating document: ${error.message}`)
     }
-
     revalidatePath("/dashboard/documents")
     return { success: true, data }
   } catch (error) {
@@ -174,13 +256,13 @@ export async function deleteDocument({ id }: { id: string }) {
     if (document.attachment_url) {
       const filePath = document.attachment_url.split("/").pop()
       if (filePath) {
-        const { error: deleteFileError } = await supabase.storage
-          .from("documents")
-          .remove([`${document.user_id}/${filePath}`])
+      const { error: deleteFileError } = await supabase.storage
+        .from("documents")
+        .remove([`${document.user_id}/${filePath}`])
 
-        if (deleteFileError) {
-          console.error(`Error deleting file: ${deleteFileError.message}`)
-          // Continue with deletion even if file removal fails
+      if (deleteFileError) {
+        console.error(`Error deleting file: ${deleteFileError.message}`)
+        // Continue with deletion even if file removal fails
         }
       }
     }

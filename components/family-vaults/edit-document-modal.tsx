@@ -76,7 +76,7 @@ export function EditDocumentModal({ isOpen, onClose, document, familyMemberId }:
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-xl">
         <DialogHeader>
           <DialogTitle>Edit Document</DialogTitle>
         </DialogHeader>

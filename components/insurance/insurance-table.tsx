@@ -7,10 +7,11 @@ import { formatCurrency } from "@/lib/utils"
 import { DeleteInsuranceModal } from "./delete-insurance-modal"
 import { EditInsuranceModal } from "./edit-insurance-modal"
 import { InsuranceDetailsModal } from "./insurance-details-modal"
-import { DownloadIcon } from "lucide-react"
+import { DownloadIcon, FileText, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { exportToCSV } from "@/utils/csv-export"
 import { useEffect, useState } from "react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export function InsuranceTable({
   currentPage = 1,
@@ -23,21 +24,23 @@ export function InsuranceTable({
   searchQuery?: string
   userId?: string
 }) {
-  const pageSize = 5
+  const [itemsPerPage, setItemsPerPage] = useState("5")
   const [insurances, setInsurances] = useState<any[]>([])
   const [count, setCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setLoading(true)
-    getInsuranceList(currentPage, pageSize, insuranceType, searchQuery, userId).then(({ data, count }) => {
+    getInsuranceList(currentPage, Number(itemsPerPage), insuranceType, searchQuery, userId).then(({ data, count }) => {
       setInsurances(data)
       setCount(count)
       setLoading(false)
     })
-  }, [currentPage, insuranceType, searchQuery, userId])
+  }, [currentPage, itemsPerPage, insuranceType, searchQuery, userId])
 
-  const totalPages = Math.ceil(count / pageSize)
+  const totalPages = Math.ceil(count / Number(itemsPerPage))
+  const startIndex = (currentPage - 1) * Number(itemsPerPage)
+  const endIndex = Math.min(startIndex + Number(itemsPerPage), count)
 
   const handleExportCSV = async () => {
     const { data } = await getInsuranceList(1, 1000, insuranceType, searchQuery, userId)
@@ -96,10 +99,20 @@ export function InsuranceTable({
                     <td className="px-4 py-3 text-sm">
                       <div className="flex space-x-2">
                         <InsuranceDetailsModal insurance={insurance}>
-                          <Button variant="outline" size="sm">View</Button>
+                          <Button variant="ghost" size="icon">
+                            <FileText className="h-4 w-4" />
+                          </Button>
                         </InsuranceDetailsModal>
-                        <DeleteInsuranceModal id={insurance.id} />
-                        <EditInsuranceModal id={insurance.id} />
+                        <EditInsuranceModal id={insurance.id}>
+                          <Button variant="ghost" size="icon">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </EditInsuranceModal>
+                        <DeleteInsuranceModal id={insurance.id}>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </DeleteInsuranceModal>
                       </div>
                     </td>
                   </tr>
@@ -116,13 +129,57 @@ export function InsuranceTable({
         </div>
       </div>
 
-      {totalPages > 1 && (
-        <Pagination
-          totalPages={totalPages}
-          currentPage={currentPage}
-          baseUrl={`/dashboard/insurance?type=${insuranceType}${searchQuery ? `&search=${searchQuery}` : ""}&page=`}
-        />
-      )}
+      <div className="flex flex-col items-center justify-between gap-4 border-t px-4 py-4 sm:flex-row">
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-gray-500">
+            Showing {startIndex + 1} to {endIndex} of {count} entries
+          </p>
+          <Select value={itemsPerPage} onValueChange={setItemsPerPage}>
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue placeholder="10" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = `/dashboard/insurance?type=${insuranceType}${searchQuery ? `&search=${searchQuery}` : ""}&page=${Math.max(currentPage - 1, 1)}`}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+            const pageNumber = i + 1
+            return (
+              <Button
+                key={i}
+                variant={currentPage === pageNumber ? "default" : "outline"}
+                size="sm"
+                onClick={() => window.location.href = `/dashboard/insurance?type=${insuranceType}${searchQuery ? `&search=${searchQuery}` : ""}&page=${pageNumber}`}
+              >
+                {pageNumber}
+              </Button>
+            )
+          })}
+          {totalPages > 5 && <span>...</span>}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = `/dashboard/insurance?type=${insuranceType}${searchQuery ? `&search=${searchQuery}` : ""}&page=${Math.min(currentPage + 1, totalPages)}`}
+            disabled={currentPage === totalPages || totalPages === 0}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

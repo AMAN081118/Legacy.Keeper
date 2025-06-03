@@ -17,6 +17,7 @@ export async function POST(request: Request) {
       phone: userData.phone,
       dob: userData.dob,
       gender: userData.gender,
+      government_id_url: userData.government_id_url,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
@@ -24,6 +25,26 @@ export async function POST(request: Request) {
     if (error) {
       console.error("Error creating user:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Assign default 'user' role
+    try {
+      const { data: userRole } = await supabase
+        .from("roles")
+        .select("id")
+        .eq("name", "user")
+        .single()
+
+      if (userRole) {
+        await supabase.from("user_roles").insert({
+          user_id: userId,
+          role_id: userRole.id,
+          created_at: new Date().toISOString(),
+        })
+      }
+    } catch (roleError) {
+      console.warn("Warning: Could not assign default role:", roleError)
+      // Don't fail the registration if role assignment fails
     }
 
     return NextResponse.json({ success: true })

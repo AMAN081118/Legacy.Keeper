@@ -1,18 +1,20 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { PlusCircle, RefreshCw } from "lucide-react"
+import { PlusCircle, RefreshCw, Download } from "lucide-react"
 import { useState } from "react"
 import { AddDepositInvestmentModal } from "./add-deposit-investment-modal"
 import { useRole } from "@/components/dashboard/role-context"
+import type { DepositInvestment } from "@/lib/supabase/database.types"
 
 interface DepositsInvestmentsHeaderProps {
   totalAmount: number
   count: number
   onRefresh: () => Promise<void>
+  depositsInvestments: DepositInvestment[]
 }
 
-export function DepositsInvestmentsHeader({ totalAmount, count, onRefresh }: DepositsInvestmentsHeaderProps) {
+export function DepositsInvestmentsHeader({ totalAmount, count, onRefresh, depositsInvestments }: DepositsInvestmentsHeaderProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const { currentRole } = useRole()
@@ -21,6 +23,31 @@ export function DepositsInvestmentsHeader({ totalAmount, count, onRefresh }: Dep
     setIsRefreshing(true)
     await onRefresh()
     setIsRefreshing(false)
+  }
+
+  const handleDownload = () => {
+    // Create CSV content
+    const headers = ["Date", "Investment Name", "Investment Description", "Investment Type", "Amount"]
+    const csvContent = [
+      headers.join(","),
+      ...depositsInvestments.map(item => [
+        new Date(item.date).toLocaleDateString("en-IN"),
+        `"${item.name.replace(/"/g, '""')}"`,
+        `"${(item.description || "").replace(/"/g, '""')}"`,
+        item.investment_type,
+        item.amount
+      ].join(","))
+    ].join("\n")
+
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", `deposits-investments-${new Date().toISOString().split("T")[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   return (
@@ -34,6 +61,10 @@ export function DepositsInvestmentsHeader({ totalAmount, count, onRefresh }: Dep
           <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
             <span className="sr-only">Refresh</span>
+          </Button>
+          <Button variant="outline" onClick={handleDownload}>
+            <Download className="mr-2 h-4 w-4" />
+            Download CSV
           </Button>
           {currentRole?.name !== "nominee" && (
             <Button onClick={() => setIsAddModalOpen(true)}>

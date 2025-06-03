@@ -13,7 +13,7 @@ export const metadata = {
 
 export default async function DebtsLoansPage() {
   const supabase = createServerClient()
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
 
   // Check if user is authenticated
   const {

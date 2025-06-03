@@ -82,7 +82,7 @@ export function AddReminderModal({ buttonText = "+ Add New Reminder" }: AddRemin
       <DialogTrigger asChild>
         <Button>{buttonText}</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-xl">
         <DialogHeader>
           <DialogTitle>Add New Reminder</DialogTitle>
         </DialogHeader>
@@ -143,7 +143,11 @@ export function AddReminderModal({ buttonText = "+ Add New Reminder" }: AddRemin
 
             <div className="grid gap-2">
               <Label>Attach Documents</Label>
-              <FileUpload name="file" maxSize={5} supportedFileTypes={["pdf", "jpg", "jpeg", "png", "doc", "docx"]} />
+              <FileUpload 
+                name="file"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                maxSize={5 * 1024 * 1024}
+              />
             </div>
           </div>
 

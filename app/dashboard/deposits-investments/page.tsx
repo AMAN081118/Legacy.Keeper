@@ -7,7 +7,7 @@ import DepositsInvestmentsClient from "@/components/deposits-investments/deposit
 
 export default async function DepositsInvestmentsPage() {
   const supabase = createServerComponentClient({ cookies });
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   const {
     data: { session },
@@ -52,6 +52,6 @@ export default async function DepositsInvestmentsPage() {
       initialDeposits={depositsResponse.success ? depositsResponse.data : []}
       initialStats={statsResponse.success ? statsResponse.data : { totalAmount: 0, count: 0 }}
       userId={userId}
-    />
+      />
   );
 }

@@ -17,6 +17,11 @@ export function DebtsLoansTabs({ moneyGiven, moneyReceived }: DebtsLoansTabsProp
   const [activeTab, setActiveTab] = useState("given")
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
+  // Handler to refresh data after add/edit
+  const handleRefresh = () => {
+    window.location.reload()
+  }
+
   return (
     <>
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -44,6 +49,7 @@ export function DebtsLoansTabs({ moneyGiven, moneyReceived }: DebtsLoansTabsProp
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         defaultType={activeTab === "given" ? "Given" : "Received"}
+        onSuccess={handleRefresh}
       />
     </>
   )

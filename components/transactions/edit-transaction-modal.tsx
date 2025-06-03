@@ -167,8 +167,9 @@ export function EditTransactionModal({ transaction, isOpen, onClose, onSave }: E
               <Label htmlFor="person-party">Person/Party</Label>
               <Input
                 id="person-party"
-                value={editedTransaction.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
+                value={editedTransaction.person}
+                onChange={(e) => handleInputChange("person", e.target.value)}
+                placeholder="Netflix"
               />
             </div>
           </div>

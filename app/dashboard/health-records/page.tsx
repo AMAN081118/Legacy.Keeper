@@ -10,7 +10,7 @@ import { redirect } from "next/navigation"
 export const dynamic = "force-dynamic"
 
 export default async function HealthRecordsPage() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   let currentRole = null
   try {
     currentRole = await getCurrentRoleFromSession(cookieStore)

@@ -18,6 +18,10 @@ interface Trustee {
   profile_photo_url?: string
   government_id_url?: string
   approval_type: string
+  status: string
+  invitation_token?: string
+  invitation_sent_at?: string
+  invitation_responded_at?: string
   created_at: string
   updated_at: string
 }

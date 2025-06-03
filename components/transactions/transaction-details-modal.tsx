@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { X, Download, Calendar, FileText, DollarSign, CreditCard } from "lucide-react"
+import { X, Download, Calendar, FileText, DollarSign, CreditCard, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { format, parseISO } from "date-fns"
@@ -75,6 +75,14 @@ export function TransactionDetailsModal({ transaction, isOpen, onClose }: Transa
                 <div className="flex items-center">
                   <Calendar className="mr-2 h-5 w-5 text-gray-400" />
                   <p>{format(parseISO(transaction.date), "PPP")}</p>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <h4 className="text-sm font-medium text-gray-500">Person/Party</h4>
+                <div className="flex items-center">
+                  <User className="mr-2 h-5 w-5 text-gray-400" />
+                  <p>{transaction.person || "N/A"}</p>
                 </div>
               </div>
             </div>

@@ -172,20 +172,6 @@ export function EditInsuranceModal({ id }: { id: string }) {
               </div>
 
               <div className="space-y-2">
-                <Label>Do you want to remember on this</Label>
-                <RadioGroup defaultValue="no" name="remember" className="flex gap-4">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="edit-yes" />
-                    <Label htmlFor="edit-yes">Yes</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="edit-no" />
-                    <Label htmlFor="edit-no">No</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-2">
                 <Label>Insurance Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>

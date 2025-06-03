@@ -8,7 +8,6 @@ export function RemindersHeader() {
           <h1 className="text-2xl font-bold tracking-tight">Reminders</h1>
           <p className="text-muted-foreground">View Reminder Details here!!</p>
         </div>
-        <AddReminderModal />
       </div>
     </div>
   )

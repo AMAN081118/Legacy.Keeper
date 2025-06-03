@@ -13,7 +13,7 @@ export default async function InsurancePage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerClient()
   let currentRole = null
   let userId = null
@@ -46,9 +46,11 @@ export default async function InsurancePage({
     if (relatedUser?.id) userId = relatedUser.id
   }
 
-  const page = typeof searchParams.page === "string" ? Number.parseInt(searchParams.page) : 1
-  const insuranceType = typeof searchParams.type === "string" ? searchParams.type : "All"
-  const searchQuery = typeof searchParams.search === "string" ? searchParams.search : ""
+  // Await searchParams before using its properties (Next.js 14+)
+  const params = await searchParams
+  const page = typeof params.page === "string" ? Number(params.page) : 1
+  const insuranceType = typeof params.type === "string" ? params.type : "All"
+  const searchQuery = typeof params.search === "string" ? params.search : ""
 
   const { count } = await getInsuranceCount()
 

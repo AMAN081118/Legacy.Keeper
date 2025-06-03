@@ -33,13 +33,8 @@ export function AddDepositInvestmentModal({ isOpen, onClose, onSuccess }: AddDep
   const [description, setDescription] = useState("")
   const [paidTo, setPaidTo] = useState("")
   const [date, setDate] = useState<Date | undefined>(new Date())
-  const [maturityDate, setMaturityDate] = useState<Date | undefined>(undefined)
-  const [interestRate, setInterestRate] = useState("")
-  const [expectedReturns, setExpectedReturns] = useState("")
-  const [status, setStatus] = useState<string>("Active")
   const [attachment, setAttachment] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [rememberDetails, setRememberDetails] = useState(false)
   const { toast } = useToast()
 
   const resetForm = () => {
@@ -49,12 +44,7 @@ export function AddDepositInvestmentModal({ isOpen, onClose, onSuccess }: AddDep
     setDescription("")
     setPaidTo("")
     setDate(new Date())
-    setMaturityDate(undefined)
-    setInterestRate("")
-    setExpectedReturns("")
-    setStatus("Active")
     setAttachment(null)
-    setRememberDetails(false)
   }
 
   const handleClose = () => {
@@ -74,16 +64,6 @@ export function AddDepositInvestmentModal({ isOpen, onClose, onSuccess }: AddDep
       formData.append("description", description)
       formData.append("paidTo", paidTo)
       formData.append("date", date ? date.toISOString() : new Date().toISOString())
-      if (maturityDate) {
-        formData.append("maturityDate", maturityDate.toISOString())
-      }
-      if (interestRate) {
-        formData.append("interestRate", interestRate)
-      }
-      if (expectedReturns) {
-        formData.append("expectedReturns", expectedReturns)
-      }
-      formData.append("status", status)
       if (attachment) {
         formData.append("attachment", attachment)
       }
@@ -95,9 +75,7 @@ export function AddDepositInvestmentModal({ isOpen, onClose, onSuccess }: AddDep
           title: "Success",
           description: "Deposit/Investment added successfully",
         })
-        if (!rememberDetails) {
-          resetForm()
-        }
+        resetForm()
         onSuccess()
         onClose()
       } else {
@@ -151,25 +129,6 @@ export function AddDepositInvestmentModal({ isOpen, onClose, onSuccess }: AddDep
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Do you want to remember on this</Label>
-            <RadioGroup
-              defaultValue="no"
-              className="flex space-x-4"
-              value={rememberDetails ? "yes" : "no"}
-              onValueChange={(value) => setRememberDetails(value === "yes")}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="yes" id="yes" />
-                <Label htmlFor="yes">Yes</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="no" id="no" />
-                <Label htmlFor="no">No</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="amount">Amount</Label>
@@ -207,65 +166,6 @@ export function AddDepositInvestmentModal({ isOpen, onClose, onSuccess }: AddDep
                 </PopoverContent>
               </Popover>
             </div>
-            <div className="space-y-2">
-              <Label>Maturity Date (Optional)</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !maturityDate && "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {maturityDate ? format(maturityDate, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={maturityDate} onSelect={setMaturityDate} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="interestRate">Interest Rate (%) (Optional)</Label>
-              <Input
-                id="interestRate"
-                type="number"
-                min="0"
-                step="0.01"
-                value={interestRate}
-                onChange={(e) => setInterestRate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="expectedReturns">Expected Returns (Optional)</Label>
-              <Input
-                id="expectedReturns"
-                type="number"
-                min="0"
-                step="0.01"
-                value={expectedReturns}
-                onChange={(e) => setExpectedReturns(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={setStatus} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Matured">Matured</SelectItem>
-                <SelectItem value="Withdrawn">Withdrawn</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="space-y-2">
@@ -281,11 +181,28 @@ export function AddDepositInvestmentModal({ isOpen, onClose, onSuccess }: AddDep
 
           <div className="space-y-2">
             <Label>Attachment</Label>
-            <FileUpload
-              onFileChange={(file) => setAttachment(file)}
-              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-              maxSize={5 * 1024 * 1024} // 5MB
-            />
+            {attachment ? (
+              <div className="border rounded-md p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-600 text-xs font-medium">{attachment.name}</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-500"
+                  onClick={() => setAttachment(null)}
+                >
+                  Remove
+                </Button>
+              </div>
+            ) : (
+              <FileUpload
+                onFileChange={(file) => setAttachment(file)}
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                maxSize={5 * 1024 * 1024} // 5MB
+              />
+            )}
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

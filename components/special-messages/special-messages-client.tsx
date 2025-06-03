@@ -109,11 +109,11 @@ export function SpecialMessagesClient() {
         <EmptyState onCreateMessage={() => setIsCreateModalOpen(true)} />
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-6">
             {currentMessages.map((message) => (
-              <MessageCard key={message.id} message={message} onDelete={() => handleDeleteMessage(message.id)} />
-            ))}
-          </div>
+            <MessageCard key={message.id} message={message} onDelete={() => handleDeleteMessage(message.id)} />
+          ))}
+        </div>
           {/* Pagination Controls */}
           <div className="flex flex-col items-center justify-between gap-4 border-t px-4 py-4 sm:flex-row mt-6">
             <div className="flex items-center gap-2">

@@ -63,7 +63,7 @@ export async function getSpecialMessages() {
         recipients = allUsers.filter((u: any) => message.recipient_ids.includes(u.id))
       }
       return {
-        ...message,
+      ...message,
         sender: senderMap[message.sender_id] || null,
         recipients,
       }
@@ -211,4 +211,82 @@ export async function deleteSpecialMessage(id: string) {
 
   revalidatePath("/dashboard/special-message")
   return { success: true }
+}
+
+export async function updateSpecialMessage(id: string, formData: FormData) {
+  const supabase = createServerClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: "Not authenticated" }
+  }
+
+  const message = formData.get("message") as string
+  const isForAll = formData.get("isForAll") === "true"
+  const recipientIdsJson = formData.get("recipientIds") as string
+  const recipientIds = JSON.parse(recipientIdsJson || "[]")
+  const file = formData.get("file") as File | null
+  const currentAttachmentUrl = formData.get("currentAttachmentUrl") as string | null
+
+  let attachmentUrl = currentAttachmentUrl || null
+
+  // Handle file upload if present
+  if (file && file.size > 0) {
+    // Ensure bucket exists
+    const bucketExists = await ensureSpecialMessageBucket();
+    if (!bucketExists) {
+      return { success: false, error: "Storage bucket not available" }
+    }
+
+    // Delete old attachment if it exists
+    if (currentAttachmentUrl) {
+      const filePath = currentAttachmentUrl.split("/").slice(-2).join("/")
+      if (filePath) {
+        await supabase.storage.from("special-message-document").remove([`special_messages/${filePath}`])
+      }
+    }
+
+    const fileExt = file.name.split(".").pop()
+    const fileName = `special_messages/${user.id}/${Date.now()}.${fileExt}`
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("special-message-document")
+      .upload(fileName, file, {
+        cacheControl: "3600",
+        upsert: false,
+      })
+
+    if (uploadError) {
+      console.error("Error uploading file:", uploadError)
+      return { success: false, error: "Failed to upload file" }
+    }
+
+    // Get public URL
+    const { data: urlData } = await supabase.storage.from("special-message-document").getPublicUrl(fileName)
+    attachmentUrl = urlData.publicUrl
+  }
+
+  // Update message
+  const { data, error } = await supabase
+    .from("special_messages")
+    .update({
+      message,
+      recipient_ids: isForAll ? [] : recipientIds,
+      attachment_url: attachmentUrl,
+      is_for_all: isForAll,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("sender_id", user.id)
+    .select()
+
+  if (error) {
+    console.error("Error updating special message:", error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath("/dashboard/special-message")
+  return { success: true, data }
 }

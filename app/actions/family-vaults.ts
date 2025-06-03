@@ -1,6 +1,7 @@
 "use server"
 
 import { createServerClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
@@ -8,22 +9,19 @@ import { v4 as uuidv4 } from "uuid"
 
 // Create a bucket for family documents if it doesn't exist
 async function ensureFamilyDocumentsBucket() {
-  const supabase = createServerClient()
+  const adminClient = createAdminClient()
   try {
     // Check if the bucket exists
-    const { data: buckets } = await supabase.storage.listBuckets()
+    const { data: buckets } = await adminClient.storage.listBuckets()
     const bucketName = "family-documents"
     if (!buckets?.find((bucket) => bucket.name === bucketName)) {
-      // Try to create the bucket
-      const { error } = await supabase.storage.createBucket(bucketName, {
-        public: false,
+      // Try to create the bucket using admin client
+      const { error } = await adminClient.storage.createBucket(bucketName, {
+        public: true,
         fileSizeLimit: 10485760, // 10MB
+        allowedMimeTypes: ['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
       })
       if (error) {
-        // If RLS error, return a special code
-        if (error.message && error.message.includes('row-level security')) {
-          return { success: false, error: 'RLS_POLICY_ERROR', bucketName }
-        }
         console.error("Error creating family documents bucket:", error)
         return { success: false, error: "Failed to create storage bucket", bucketName }
       }
@@ -37,10 +35,8 @@ async function ensureFamilyDocumentsBucket() {
 
 // Get all family members for the current user
 export async function getFamilyMembers() {
-  const cookieStore = cookies()
-  const supabase = createServerClient()
-
   try {
+    const supabase = createServerClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -68,10 +64,8 @@ export async function getFamilyMembers() {
 
 // Get a specific family member by ID
 export async function getFamilyMember(id: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient()
-
   try {
+    const supabase = createServerClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -100,10 +94,8 @@ export async function getFamilyMember(id: string) {
 
 // Add a new family member
 export async function addFamilyMember(formData: FormData) {
-  const cookieStore = cookies()
-  const supabase = createServerClient()
-
   try {
+    const supabase = createServerClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -138,10 +130,8 @@ export async function addFamilyMember(formData: FormData) {
 
 // Update an existing family member
 export async function updateFamilyMember(id: string, formData: FormData) {
-  const cookieStore = cookies()
-  const supabase = createServerClient()
-
   try {
+    const supabase = createServerClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -179,10 +169,8 @@ export async function updateFamilyMember(id: string, formData: FormData) {
 
 // Delete a family member
 export async function deleteFamilyMember(id: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient()
-
   try {
+    const supabase = createServerClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -229,10 +217,8 @@ export async function deleteFamilyMember(id: string) {
 
 // Get all documents for a family member
 export async function getFamilyDocuments(familyMemberId: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient()
-
   try {
+    const supabase = createServerClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -273,10 +259,8 @@ export async function getFamilyDocuments(familyMemberId: string) {
 
 // Add a new document for a family member
 export async function addFamilyDocument(familyMemberId: string, formData: FormData) {
-  const cookieStore = cookies()
-  const supabase = createServerClient()
-
   try {
+    const supabase = createServerClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -356,10 +340,8 @@ export async function addFamilyDocument(familyMemberId: string, formData: FormDa
 
 // Update an existing document
 export async function updateFamilyDocument(documentId: string, familyMemberId: string, formData: FormData) {
-  const cookieStore = cookies()
-  const supabase = createServerClient()
-
   try {
+    const supabase = createServerClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -460,10 +442,8 @@ export async function updateFamilyDocument(documentId: string, familyMemberId: s
 
 // Delete a document
 export async function deleteFamilyDocument(documentId: string, familyMemberId: string) {
-  const cookieStore = cookies()
-  const supabase = createServerClient()
-
   try {
+    const supabase = createServerClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()

@@ -62,11 +62,11 @@ export default function UserRolesPage() {
           // Fetch user info for related_user_id
           const { data: relatedUser } = await supabase
             .from("users")
-            .select("name, email")
+            .select("id, name, email")
             .eq("id", ur.related_user_id)
             .single();
           // Use a composite key to support multiple nominee/trustee roles
-          relatedUserMap[`${ur.role_id}_${ur.related_user_id}`] = relatedUser ? { name: relatedUser.name, email: relatedUser.email } : null;
+          relatedUserMap[`${ur.role_id}_${ur.related_user_id}`] = relatedUser ? { id: relatedUser.id, name: relatedUser.name, email: relatedUser.email } : null;
         }
       }
       setRoleRelatedUsers(relatedUserMap);
@@ -117,6 +117,7 @@ export default function UserRolesPage() {
                   .eq("email", nomineeEmail)
                   .eq("user_id", relatedUserId)
                   .maybeSingle();
+                console.log('[Debug] nomineeData:', nomineeData, 'for email:', nomineeEmail, 'user_id:', relatedUserId);
                 accessCategories = nomineeData?.access_categories || [];
               }
               if (role.name === "user") {

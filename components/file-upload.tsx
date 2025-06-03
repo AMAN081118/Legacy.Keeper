@@ -15,6 +15,7 @@ interface FileUploadProps {
   onFileChange?: (file: File | null) => void
   accept?: string
   maxSize?: number
+  name?: string
 }
 
 export function FileUpload({
@@ -23,6 +24,7 @@ export function FileUpload({
   onFileChange,
   accept = ".pdf,.jpg,.jpeg,.png",
   maxSize = 5 * 1024 * 1024, // 5MB default
+  name = "file"
 }: FileUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -120,6 +122,7 @@ export function FileUpload({
       <input
         type="file"
         id="file-upload"
+        name={name}
         className="hidden"
         onChange={handleFileChange}
         ref={fileInputRef}

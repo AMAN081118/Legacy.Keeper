@@ -6,7 +6,7 @@ import { redirect } from "next/navigation"
 import { getCurrentRoleFromSession } from "@/app/actions/user-roles"
 
 export default async function FamilyVaultsPage() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerClient(cookieStore)
 
   const {

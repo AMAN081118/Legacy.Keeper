@@ -100,7 +100,7 @@ export function EditAccountModal({ isOpen, onClose, onSuccess, account, userId }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-xl">
         <DialogHeader>
           <DialogTitle>Edit Account</DialogTitle>
           <DialogDescription>Update your digital account details.</DialogDescription>
@@ -131,7 +131,7 @@ export function EditAccountModal({ isOpen, onClose, onSuccess, account, userId }
             <Label htmlFor="passwordPhone">Password/Phone Number</Label>
             <Input
               id="passwordPhone"
-              type="password"
+              type="text"
               value={passwordPhone}
               onChange={(e) => setPasswordPhone(e.target.value)}
               placeholder="Enter password or phone number"
@@ -185,13 +185,19 @@ export function EditAccountModal({ isOpen, onClose, onSuccess, account, userId }
           <div className="grid grid-cols-1 gap-2">
             <Label>Government ID</Label>
             <FileUpload
-              endpoint="governmentIdUpload"
-              value={governmentIdUrl}
-              onChange={setGovernmentIdUrl}
-              fileTypes="image/*,.pdf"
+              bucket="digital-accounts"
+              onUploadComplete={setGovernmentIdUrl}
+              accept="image/*,.pdf"
             />
             {governmentIdUrl && (
-              <p className="text-xs text-green-600">Current file: {governmentIdUrl.split("/").pop()}</p>
+              <a
+                href={governmentIdUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-600 underline"
+              >
+                View Current File
+              </a>
             )}
             <p className="text-xs text-muted-foreground">Supported formats: PDF, JPG, JPEG, PNG</p>
           </div>

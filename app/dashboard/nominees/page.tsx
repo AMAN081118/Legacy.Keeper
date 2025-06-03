@@ -1,17 +1,15 @@
+import { Suspense } from "react"
 import { getNominees } from "@/app/actions/nominees"
 import { NomineesClient } from "@/components/nominees/nominees-client"
+import { CardGridLoadingSkeleton } from "@/components/ui/loading-states"
 
 export const dynamic = "force-dynamic"
 
-export default async function NomineesPage() {
+// Separate component for data fetching
+async function NomineesData() {
   try {
     const nominees = await getNominees()
-
-    return (
-      <div className="flex flex-col space-y-6">
-        <NomineesClient initialNominees={nominees} />
-      </div>
-    )
+    return <NomineesClient initialNominees={nominees} />
   } catch (error) {
     console.error("Error in NomineesPage:", error)
     return (
@@ -20,4 +18,14 @@ export default async function NomineesPage() {
       </div>
     )
   }
+}
+
+export default function NomineesPage() {
+  return (
+    <div className="flex flex-col space-y-6">
+      <Suspense fallback={<CardGridLoadingSkeleton count={6} />}>
+        <NomineesData />
+      </Suspense>
+    </div>
+  )
 }
