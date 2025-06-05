@@ -1,4 +1,4 @@
-import { FAQContent } from "@/components/faq-content"
+import { FAQContent } from "@/components/landing/faq-content"
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
 

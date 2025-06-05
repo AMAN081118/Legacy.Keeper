@@ -1,4 +1,4 @@
-import { ContactForm } from "@/components/contact-form"
+import { ContactForm } from "@/components/landing/contact-form"
 
 export const metadata = {
   title: "Contact Us - Legacy Keeper",

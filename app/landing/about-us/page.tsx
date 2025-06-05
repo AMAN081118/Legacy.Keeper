@@ -1,6 +1,6 @@
-import { AboutHero } from "@/components/about-hero"
-import { AboutServices } from "@/components/about-services"
-import { AboutValues } from "@/components/about-values"
+import { AboutHero } from "@/components/landing/about-hero"
+import { AboutServices } from "@/components/landing/about-services"
+import { AboutValues } from "@/components/landing/about-values"
 
 export const metadata = {
   title: "About Us - Legacy Keeper",
