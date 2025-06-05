@@ -22,7 +22,7 @@ interface TrusteeDetails {
 export default function TrusteeConfirm() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [processing, setProcessing] = useState(false)
+  const [processingAction, setProcessingAction] = useState<null | 'accept' | 'reject'>(null)
   const [error, setError] = useState<string | null>(null)
   const [trusteeDetails, setTrusteeDetails] = useState<TrusteeDetails | null>(null)
 
@@ -55,23 +55,16 @@ export default function TrusteeConfirm() {
 
   const handleApprove = async () => {
     if (!trusteeDetails) return
-
     try {
-      setProcessing(true)
+      setProcessingAction('accept')
       const response = await fetch("/api/trustee-onboarding/accept", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ trusteeId: trusteeDetails.id }),
       })
-
       const result = await response.json()
-
       if (result.success) {
-        // Show success message briefly before redirecting
         alert("Trustee invitation accepted successfully! You are now a trustee.")
-        // Redirect to dashboard on success
         router.push("/dashboard")
       } else {
         setError(result.error || "Failed to accept invitation")
@@ -80,29 +73,22 @@ export default function TrusteeConfirm() {
       console.error("Error accepting invitation:", err)
       setError("An unexpected error occurred")
     } finally {
-      setProcessing(false)
+      setProcessingAction(null)
     }
   }
 
   const handleReject = async () => {
     if (!trusteeDetails) return
-
     try {
-      setProcessing(true)
+      setProcessingAction('reject')
       const response = await fetch("/api/trustee-onboarding/reject", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ trusteeId: trusteeDetails.id }),
       })
-
       const result = await response.json()
-
       if (result.success) {
-        // Show success message briefly before redirecting
         alert("Trustee invitation rejected successfully.")
-        // Redirect to home page on rejection
         router.push("/")
       } else {
         setError(result.error || "Failed to reject invitation")
@@ -111,7 +97,7 @@ export default function TrusteeConfirm() {
       console.error("Error rejecting invitation:", err)
       setError("An unexpected error occurred")
     } finally {
-      setProcessing(false)
+      setProcessingAction(null)
     }
   }
 
@@ -204,20 +190,11 @@ export default function TrusteeConfirm() {
           )}
         </div>
         <div className="flex gap-4 w-full max-w-xs mx-auto">
-          <Button
-            variant="destructive"
-            className="flex-1 text-white text-lg py-2"
-            onClick={handleReject}
-            disabled={processing}
-          >
-            {processing ? "Processing..." : "Reject"}
+          <Button onClick={handleApprove} disabled={processingAction === 'accept'} className="w-full mb-4">
+            {processingAction === 'accept' ? 'Accepting...' : 'Accept Invitation'}
           </Button>
-          <Button
-            className="flex-1 bg-green-700 hover:bg-green-800 text-white text-lg py-2"
-            onClick={handleApprove}
-            disabled={processing}
-          >
-            {processing ? "Processing..." : "Approve"}
+          <Button onClick={handleReject} disabled={processingAction === 'reject'} variant="outline" className="w-full">
+            {processingAction === 'reject' ? 'Rejecting...' : 'Reject'}
           </Button>
         </div>
       </div>

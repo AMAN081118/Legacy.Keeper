@@ -36,6 +36,14 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   const [currentRole, setCurrentRoleState] = useState<CurrentRole | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
+  // Clean up session storage on unmount
+  useEffect(() => {
+    return () => {
+      sessionStorage.removeItem("currentRole");
+      sessionStorage.removeItem("currentRoleUser");
+    };
+  }, []);
+
   // On mount or when user changes, validate or reset role
   useEffect(() => {
     async function validateOrResetRole() {
@@ -43,13 +51,23 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       const { data: userData } = await supabase.auth.getUser();
       const userEmail = userData?.user?.email || null;
       setCurrentUserEmail(userEmail);
+
+      if (!userEmail) {
+        // User is logged out, clear everything
+        setCurrentRoleState(null);
+        sessionStorage.removeItem("currentRole");
+        sessionStorage.removeItem("currentRoleUser");
+        return;
+      }
+
       const storedRole = sessionStorage.getItem("currentRole");
       const storedRoleUser = sessionStorage.getItem("currentRoleUser");
-      if (userEmail && storedRole && storedRoleUser === userEmail) {
-        // Use the stored role for this user
+      
+      if (storedRole && storedRoleUser === userEmail) {
         try {
           setCurrentRoleState(JSON.parse(storedRole));
         } catch {
+          // If stored role is invalid, reset to default
           setCurrentRoleState({ id: "user", name: "user" });
           sessionStorage.setItem("currentRole", JSON.stringify({ id: "user", name: "user" }));
           sessionStorage.setItem("currentRoleUser", userEmail);
@@ -57,13 +75,8 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       } else {
         // New user or no stored role, default to user
         setCurrentRoleState({ id: "user", name: "user" });
-        if (userEmail) {
-          sessionStorage.setItem("currentRole", JSON.stringify({ id: "user", name: "user" }));
-          sessionStorage.setItem("currentRoleUser", userEmail);
-        } else {
-          sessionStorage.removeItem("currentRole");
-          sessionStorage.removeItem("currentRoleUser");
-        }
+        sessionStorage.setItem("currentRole", JSON.stringify({ id: "user", name: "user" }));
+        sessionStorage.setItem("currentRoleUser", userEmail);
       }
     }
     validateOrResetRole();
@@ -81,6 +94,9 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     if (role && currentUserEmail) {
       sessionStorage.setItem("currentRole", JSON.stringify(role));
       sessionStorage.setItem("currentRoleUser", currentUserEmail);
+    } else {
+      sessionStorage.removeItem("currentRole");
+      sessionStorage.removeItem("currentRoleUser");
     }
   };
 

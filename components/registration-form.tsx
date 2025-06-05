@@ -141,7 +141,25 @@ export function RegistrationForm({ onSwitchToLogin }: { onSwitchToLogin?: () => 
         password: formData.password,
       })
 
-      if (signInError) throw signInError
+      if (signInError) {
+        // Check if the error is due to email not being confirmed
+        if (
+          signInError.message &&
+          (signInError.message.toLowerCase().includes("email not confirmed") ||
+            signInError.message.toLowerCase().includes("confirm your email"))
+        ) {
+          setError(null)
+          toast({
+            title: "Confirmation email sent",
+            description:
+              "A confirmation email has been sent. Please check your inbox and confirm your email to continue.",
+            variant: "default",
+          })
+          return
+        } else {
+          throw signInError
+        }
+      }
 
       // Redirect to dashboard
       router.push("/dashboard")

@@ -14,17 +14,18 @@ interface RequestDetailModalProps {
   request: RequestData
   isOpen: boolean
   onClose: () => void
-  onReject: () => void
-  onApprove: () => void
+  onReject?: () => void
+  onApprove?: () => void
+  mode?: 'sent' | 'received'
 }
 
-export function RequestDetailModal({ request, isOpen, onClose, onReject, onApprove }: RequestDetailModalProps) {
+export function RequestDetailModal({ request, isOpen, onClose, onReject, onApprove, mode = 'received' }: RequestDetailModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto p-0 sm:rounded-lg">
         <DialogHeader className="sticky top-0 z-10 border-b bg-white px-6 py-4">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl">Request Received</DialogTitle>
+            <DialogTitle className="text-xl">Request Details</DialogTitle>
             <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
               <X className="h-4 w-4" />
               <span className="sr-only">Close</span>
@@ -61,29 +62,37 @@ export function RequestDetailModal({ request, isOpen, onClose, onReject, onAppro
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="transaction-type">Transaction Type</Label>
-              <Select defaultValue={request.transactionType} disabled>
-                <SelectTrigger id="transaction-type">
-                  <SelectValue placeholder="Select transaction type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Debt">Debt</SelectItem>
-                  <SelectItem value="Investment">Investment</SelectItem>
-                  <SelectItem value="Loan">Loan</SelectItem>
-                </SelectContent>
-              </Select>
+              {mode === 'sent' ? (
+                <Input id="transaction-type" value={request.transactionType} readOnly />
+              ) : (
+                <Select defaultValue={request.transactionType} disabled>
+                  <SelectTrigger id="transaction-type">
+                    <SelectValue placeholder="Select transaction type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Debt">Debt</SelectItem>
+                    <SelectItem value="Investment">Investment</SelectItem>
+                    <SelectItem value="Loan">Loan</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="amount">Amount</Label>
-              <Select defaultValue={request.amount} disabled>
-                <SelectTrigger id="amount">
-                  <SelectValue placeholder="Select amount" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="₹2,000">₹2,000</SelectItem>
-                  <SelectItem value="₹5,000">₹5,000</SelectItem>
-                  <SelectItem value="₹10,000">₹10,000</SelectItem>
-                </SelectContent>
-              </Select>
+              {mode === 'sent' ? (
+                <Input id="amount" value={request.amount} readOnly />
+              ) : (
+                <Select defaultValue={request.amount} disabled>
+                  <SelectTrigger id="amount">
+                    <SelectValue placeholder="Select amount" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="₹2,000">₹2,000</SelectItem>
+                    <SelectItem value="₹5,000">₹5,000</SelectItem>
+                    <SelectItem value="₹10,000">₹10,000</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
 
@@ -99,25 +108,33 @@ export function RequestDetailModal({ request, isOpen, onClose, onReject, onAppro
 
           <div className="space-y-2">
             <Label>Attachment</Label>
-            <div className="overflow-hidden rounded-md border">
-              <Image
-                src={request.attachment || "/placeholder.svg"}
-                alt="Request attachment"
-                width={400}
-                height={200}
-                className="h-auto w-full object-cover"
-              />
-            </div>
+            {request.attachment ? (
+              <div className="flex items-center gap-2 border rounded-md p-3">
+                <span className="text-sm">Attachment:</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-blue-600"
+                  onClick={() => window.open(request.attachment, "_blank")}
+                >
+                  View Attachment
+                </Button>
+              </div>
+            ) : (
+              <div className="text-gray-400 border rounded-md p-3 text-center">No attachment</div>
+            )}
           </div>
 
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
-            <Button variant="destructive" onClick={onReject} className="sm:w-auto">
-              Rejected
-            </Button>
-            <Button variant="default" onClick={onApprove} className="bg-green-600 hover:bg-green-700 sm:w-auto">
-              Approve
-            </Button>
-          </div>
+          {mode === 'received' && (
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
+              <Button variant="destructive" onClick={onReject} className="sm:w-auto">
+                Rejected
+              </Button>
+              <Button variant="default" onClick={onApprove} className="bg-green-600 hover:bg-green-700 sm:w-auto">
+                Approve
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

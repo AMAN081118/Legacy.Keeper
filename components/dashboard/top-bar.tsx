@@ -278,7 +278,7 @@ export function TopBar({ onMobileMenuClick = () => {}, user }: TopBarProps) {
   return (
     <div className="flex h-16 items-center px-4 border-b bg-white">
       <div className="flex items-center">
-        <Image src="/image.png" alt="Logo" width={32} height={32} className="mr-2 h-8 w-8 object-contain" />
+        <Image src="/logo.png" alt="Logo" width={32} height={32} className="mr-2 h-8 w-8 object-contain" />
         <span className="font-bold text-lg text-gray-800 select-none">Legacy Keeper</span>
       </div>
       <div className="flex-1" />

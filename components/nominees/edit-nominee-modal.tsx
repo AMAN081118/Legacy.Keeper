@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
@@ -33,6 +33,8 @@ export function EditNomineeModal({ isOpen, onClose, nominee, onSuccess }: EditNo
   const [selectedCategories, setSelectedCategories] = useState<string[]>(nominee.access_categories || [])
   const formRef = useRef<HTMLFormElement>(null)
   const { toast } = useToast()
+  const [governmentIdMarkedForDelete, setGovernmentIdMarkedForDelete] = useState(false)
+  const [governmentIdFile, setGovernmentIdFile] = useState<File | null>(null)
 
   useEffect(() => {
     if (isOpen) {
@@ -53,6 +55,14 @@ export function EditNomineeModal({ isOpen, onClose, nominee, onSuccess }: EditNo
       selectedCategories.forEach((category) => {
         formData.append("accessCategories", category)
       })
+
+      // Handle government ID file upload or deletion
+      if (governmentIdFile) {
+        formData.append("governmentId", governmentIdFile)
+      }
+      if (governmentIdMarkedForDelete) {
+        formData.append("deleteGovernmentId", "true")
+      }
 
       const result = await updateNominee(formData)
 
@@ -100,6 +110,23 @@ export function EditNomineeModal({ isOpen, onClose, nominee, onSuccess }: EditNo
   }
 
   const categories = ["Finance", "Family", "Financial Planning"]
+
+  // Drag and drop handler
+  const handleGovernmentIdDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setGovernmentIdFile(e.dataTransfer.files[0]);
+      setGovernmentIdMarkedForDelete(false);
+    }
+  }, [])
+
+  const handleGovernmentIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setGovernmentIdFile(file)
+      setGovernmentIdMarkedForDelete(false)
+    }
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -228,49 +255,64 @@ export function EditNomineeModal({ isOpen, onClose, nominee, onSuccess }: EditNo
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Government ID</label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                <div className="space-y-1 text-center">
-                  {nominee.government_id_url ? (
-                    <div className="text-sm text-blue-600">
-                      <p>Document uploaded</p>
-                      <p className="text-xs text-gray-500">Upload a new file to replace</p>
-                    </div>
-                  ) : (
-                    <>
-                      <svg
-                        className="mx-auto h-12 w-12 text-gray-400"
-                        stroke="currentColor"
-                        fill="none"
-                        viewBox="0 0 48 48"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                          strokeWidth={2}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      <div className="flex text-sm text-gray-600">
-                        <label
-                          htmlFor="governmentId"
-                          className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
-                        >
-                          <span>Upload a file</span>
-                          <input
-                            id="governmentId"
-                            name="governmentId"
-                            type="file"
-                            className="sr-only"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                          />
-                        </label>
-                        <p className="pl-1">or drag and drop</p>
-                      </div>
-                      <p className="text-xs text-gray-500">PDF, JPG, JPEG up to 10MB</p>
-                    </>
-                  )}
-                </div>
+              <div
+                className="mt-1 flex flex-col items-center justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md relative"
+                onDrop={handleGovernmentIdDrop}
+                onDragOver={e => e.preventDefault()}
+              >
+                {/* Show current document link and delete button if exists and not marked for delete */}
+                {nominee.government_id_url && !governmentIdMarkedForDelete && !governmentIdFile && (
+                  <div className="flex items-center space-x-2 mb-2">
+                    <a
+                      href={nominee.government_id_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline"
+                    >
+                      View Document
+                    </a>
+                    <button
+                      type="button"
+                      className="ml-2 text-red-500 hover:text-red-700"
+                      onClick={() => setGovernmentIdMarkedForDelete(true)}
+                      title="Delete attached document"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+                {/* Show file name if new file is selected */}
+                {governmentIdFile && (
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className="text-sm text-green-700">{governmentIdFile.name}</span>
+                    <button
+                      type="button"
+                      className="ml-2 text-red-500 hover:text-red-700"
+                      onClick={() => setGovernmentIdFile(null)}
+                      title="Remove selected file"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+                {/* Drag and drop/upload UI */}
+                <label
+                  htmlFor="governmentId"
+                  className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500 py-2 px-3 border border-gray-300 shadow-sm text-xs"
+                >
+                  <span>{governmentIdFile ? "Replace file" : "Upload a file"}</span>
+                  <input
+                    id="governmentId"
+                    name="governmentId"
+                    type="file"
+                    className="sr-only"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleGovernmentIdChange}
+                  />
+                </label>
+                <p className="text-xs text-gray-500 mt-2">PDF, JPG, JPEG up to 10MB. Drag and drop to upload or click to select.</p>
+                {/* Hidden input to signal deletion on submit */}
+                {governmentIdMarkedForDelete && <input type="hidden" name="deleteGovernmentId" value="true" />}
               </div>
             </div>
           </div>

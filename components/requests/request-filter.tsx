@@ -80,55 +80,34 @@ export function RequestFilter({ filters, onFilterChange, onClose }: RequestFilte
           <label className="text-sm font-medium">Date Range</label>
           <div className="grid gap-2">
             <div className="grid gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="date-from"
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !dateRange?.from && "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange?.from ? format(dateRange.from, "PPP") : <span>From date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dateRange?.from}
-                    onSelect={(date) => setDateRange({ ...dateRange, from: date })}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <input
+                id="date-from"
+                type="date"
+                className="w-full border rounded px-3 py-2 text-sm"
+                min="1900-01-01"
+                max={new Date().toISOString().split("T")[0]}
+                value={dateRange?.from ? dateRange.from.toISOString().split("T")[0] : ""}
+                onChange={e => {
+                  const val = e.target.value ? new Date(e.target.value) : undefined;
+                  setDateRange({ ...dateRange, from: val })
+                }}
+                placeholder="From date"
+              />
             </div>
             <div className="grid gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="date-to"
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !dateRange?.to && "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange?.to ? format(dateRange.to, "PPP") : <span>To date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar
-                    mode="single"
-                    selected={dateRange?.to}
-                    onSelect={(date) => setDateRange({ ...dateRange, to: date })}
-                    initialFocus
-                    disabled={(date) => (dateRange?.from ? date < dateRange.from : false)}
-                  />
-                </PopoverContent>
-              </Popover>
+              <input
+                id="date-to"
+                type="date"
+                className="w-full border rounded px-3 py-2 text-sm"
+                min={dateRange?.from ? dateRange.from.toISOString().split("T")[0] : "1900-01-01"}
+                max={new Date().toISOString().split("T")[0]}
+                value={dateRange?.to ? dateRange.to.toISOString().split("T")[0] : ""}
+                onChange={e => {
+                  const val = e.target.value ? new Date(e.target.value) : undefined;
+                  setDateRange({ ...dateRange, to: val })
+                }}
+                placeholder="To date"
+              />
             </div>
           </div>
         </div>

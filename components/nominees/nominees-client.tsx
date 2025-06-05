@@ -9,6 +9,7 @@ import { EditNomineeModal } from "./edit-nominee-modal"
 import { DeleteNomineeModal } from "./delete-nominee-modal"
 import { useToast } from "@/components/ui/use-toast"
 import { getNominees, deleteNominee } from "@/app/actions/nominees"
+import { saveAs } from "file-saver"
 
 interface Nominee {
   id: string
@@ -98,6 +99,39 @@ export function NomineesClient({ initialNominees }: NomineesClientProps) {
     }
   }
 
+  // CSV download logic
+  const handleDownloadCSV = () => {
+    const headers = [
+      "Name",
+      "Email",
+      "Relationship",
+      "Phone",
+      "Access Categories",
+      "Government ID URL"
+    ];
+    const rows = nominees.map(nominee => [
+      nominee.name,
+      nominee.email,
+      nominee.relationship,
+      nominee.phone,
+      nominee.access_categories.join(", "),
+      nominee.government_id_url || ""
+    ]);
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(field => `"${(field || "").replace(/"/g, '""')}"`).join(","))
+    ].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "nominees.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
       <NomineesHeader
@@ -105,6 +139,7 @@ export function NomineesClient({ initialNominees }: NomineesClientProps) {
         onAddNominee={() => setIsAddModalOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onDownload={handleDownloadCSV}
       />
 
       {nominees.length === 0 ? (
@@ -128,7 +163,7 @@ export function NomineesClient({ initialNominees }: NomineesClientProps) {
         </div>
       )}
 
-      <AddNomineeModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSuccess={handleAddNominee} />
+      <AddNomineeModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSuccess={handleAddNominee} existingNomineeEmails={nominees.map(n => n.email.toLowerCase())} />
 
       {selectedNominee && (
         <>

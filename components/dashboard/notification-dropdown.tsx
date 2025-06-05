@@ -17,11 +17,11 @@ import { resendInvitation } from "@/app/actions/nominees"
 import { useToast } from "@/components/ui/use-toast"
 import Link from "next/link"
 
-async function handleNomineeRequestAction(nomineeId, action, fetchNotifications) {
+async function handleNomineeRequestAction(notificationId: string, action: 'accept' | 'reject', fetchNotifications: () => void) {
   await fetch(`/api/nominee-request-action`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nomineeId, action }),
+    body: JSON.stringify({ notificationId, action }),
   });
   fetchNotifications();
 }
@@ -114,17 +114,25 @@ export function NotificationDropdown() {
         body: JSON.stringify({ notificationId, action }),
       })
       if (res.ok) {
-        setNotifications((prev: any) => prev.map((n: any) => n.id === notificationId ? { ...n, read: true } : n))
+        setNotifications((prev) => prev.map((n) => n.id === notificationId ? { ...n, read: true } : n))
         toast({
           title: `Request ${action === "accept" ? "Accepted" : "Rejected"}`,
           description: `You have ${action === "accept" ? "accepted" : "rejected"} the nominee's access request.`,
-          variant: action === "accept" ? "success" : "destructive",
+          variant: action === "accept" ? "default" : "destructive",
         })
       } else {
-        alert("Failed to process request")
+        toast({
+          title: "Error",
+          description: "Failed to process request",
+          variant: "destructive",
+        })
       }
     } catch (e) {
-      alert("Error processing request")
+      toast({
+        title: "Error",
+        description: "Error processing request",
+        variant: "destructive",
+      })
     } finally {
       setLoadingAction(null)
     }
@@ -178,7 +186,7 @@ export function NotificationDropdown() {
                           </Link>
                     )}
                     <p className="text-xs text-gray-400 mt-1">
-                      {notification.created_at ? new Date(notification.created_at).toLocaleString() : "No date"}
+                      {notification.createdAt ? new Date(notification.createdAt).toLocaleString() : "No date"}
                     </p>
                   </div>
                   <div className="flex flex-col gap-2">
@@ -210,10 +218,10 @@ export function NotificationDropdown() {
                     {notification.type === "nominee_request" && notification.data?.nomineeId && (
                       <div className="flex gap-2">
                         <Button
-                          variant="success"
+                          variant="default"
                           size="sm"
                           className="text-xs"
-                          onClick={() => handleNomineeRequestAction(notification.data.nomineeId, 'accept', fetchNotifications)}
+                          onClick={() => handleNomineeRequestAction(notification.id, 'accept', fetchNotifications)}
                         >
                           Accept
                         </Button>
@@ -221,7 +229,7 @@ export function NotificationDropdown() {
                           variant="destructive"
                           size="sm"
                           className="text-xs"
-                          onClick={() => handleNomineeRequestAction(notification.data.nomineeId, 'reject', fetchNotifications)}
+                          onClick={() => handleNomineeRequestAction(notification.id, 'reject', fetchNotifications)}
                         >
                           Reject
                         </Button>

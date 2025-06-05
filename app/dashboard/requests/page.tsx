@@ -1,7 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server"
-import { RequestTabs } from "@/components/requests/request-tabs"
-import { RequestsHeader } from "@/components/requests/requests-header"
 import { redirect } from "next/navigation"
+import RequestsPageClient from "@/components/requests/requests-page-client"
 
 export default async function RequestsPage() {
   const supabase = createServerClient()
@@ -37,9 +36,10 @@ export default async function RequestsPage() {
     .eq("user_id", session.user.id)
 
   return (
-    <div className="space-y-6">
-      <RequestsHeader userData={userData} />
-      <RequestTabs requestsReceived={requestsReceived || []} requestsSent={requestsSent || []} />
-    </div>
+    <RequestsPageClient
+      userData={userData}
+      requestsReceived={requestsReceived || []}
+      requestsSent={requestsSent || []}
+    />
   )
 }

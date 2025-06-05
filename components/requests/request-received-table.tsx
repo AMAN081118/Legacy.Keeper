@@ -24,9 +24,10 @@ import { EditRequestModal } from "./edit-request-modal"
 
 interface RequestReceivedTableProps {
   requests: any[]
+  refreshRequests: () => void
 }
 
-export function RequestReceivedTable({ requests }: RequestReceivedTableProps) {
+export function RequestReceivedTable({ requests, refreshRequests }: RequestReceivedTableProps) {
   const [requestsData, setRequestsData] = useState<any[]>(requests)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedRequests, setSelectedRequests] = useState<string[]>([])
@@ -102,7 +103,13 @@ export function RequestReceivedTable({ requests }: RequestReceivedTableProps) {
       (request) =>
         request.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         request.sender?.email.toLowerCase().includes(searchQuery.toLowerCase()),
-    ),
+    )
+    // Sort by most recent (created_at or date)
+    .sort((a, b) => {
+      const aDate = new Date(a.created_at || a.date || 0).getTime();
+      const bDate = new Date(b.created_at || b.date || 0).getTime();
+      return bDate - aDate;
+    })
   )
 
   // Calculate pagination
@@ -152,22 +159,13 @@ export function RequestReceivedTable({ requests }: RequestReceivedTableProps) {
     if (selectedRequest) {
       setLoading(true)
       try {
-        const supabase = createClient()
-
-        // Update the request status in the database
-        const { error } = await supabase.from("requests").update({ status: "rejected" }).eq("id", selectedRequest.id)
-
-        if (error) throw error
-
-        // Update the local state
-        setRequestsData((prev) =>
-          prev.map((req) => (req.id === selectedRequest.id ? { ...req, status: "rejected" } : req)),
-        )
-
-        toast({
-          title: "Request rejected",
-          description: "The request has been successfully rejected.",
+        const res = await fetch("/api/requests/update-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ request_id: selectedRequest.id, status: "rejected" }),
         })
+        if (!res.ok) throw new Error("Failed to update status")
+        refreshRequests()
       } catch (error: any) {
         toast({
           title: "Error",
@@ -178,7 +176,6 @@ export function RequestReceivedTable({ requests }: RequestReceivedTableProps) {
         setLoading(false)
       }
     }
-
     setShowRejectModal(false)
     setConfirmationType("rejected")
     setShowConfirmationModal(true)
@@ -188,22 +185,13 @@ export function RequestReceivedTable({ requests }: RequestReceivedTableProps) {
     if (selectedRequest) {
       setLoading(true)
       try {
-        const supabase = createClient()
-
-        // Update the request status in the database
-        const { error } = await supabase.from("requests").update({ status: "approved" }).eq("id", selectedRequest.id)
-
-        if (error) throw error
-
-        // Update the local state
-        setRequestsData((prev) =>
-          prev.map((req) => (req.id === selectedRequest.id ? { ...req, status: "approved" } : req)),
-        )
-
-        toast({
-          title: "Request approved",
-          description: "The request has been successfully approved.",
+        const res = await fetch("/api/requests/update-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ request_id: selectedRequest.id, status: "approved" }),
         })
+        if (!res.ok) throw new Error("Failed to update status")
+        refreshRequests()
       } catch (error: any) {
         toast({
           title: "Error",
@@ -214,7 +202,6 @@ export function RequestReceivedTable({ requests }: RequestReceivedTableProps) {
         setLoading(false)
       }
     }
-
     setShowApproveModal(false)
     setConfirmationType("approved")
     setShowConfirmationModal(true)
@@ -223,88 +210,6 @@ export function RequestReceivedTable({ requests }: RequestReceivedTableProps) {
   const handleCloseConfirmation = () => {
     setShowConfirmationModal(false)
     setShowDetailModal(false)
-  }
-
-  // Handle delete request
-  const handleDeleteRequest = (id: string) => {
-    setRequestToDelete(id)
-    setShowDeleteModal(true)
-  }
-
-  const handleConfirmDelete = async () => {
-    if (requestToDelete) {
-      setLoading(true)
-      try {
-        const supabase = createClient()
-
-        // Delete the request from the database
-        const { error } = await supabase.from("requests").delete().eq("id", requestToDelete)
-
-        if (error) throw error
-
-        // Update the local state
-        setRequestsData((prev) => prev.filter((req) => req.id !== requestToDelete))
-
-        toast({
-          title: "Request deleted",
-          description: "The request has been successfully deleted.",
-        })
-      } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.message || "An error occurred while deleting the request.",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
-        setShowDeleteModal(false)
-        setRequestToDelete(null)
-      }
-    }
-  }
-
-  // Handle edit request
-  const handleEditRequest = (request: any) => {
-    setSelectedRequest(request)
-    setShowEditModal(true)
-  }
-
-  const handleSaveEdit = async (updatedRequest: any) => {
-    setLoading(true)
-    try {
-      const supabase = createClient()
-
-      // Update the request in the database
-      const { error } = await supabase
-        .from("requests")
-        .update({
-          title: updatedRequest.title,
-          amount: updatedRequest.amount,
-          comment: updatedRequest.comment,
-          transaction_type: updatedRequest.transaction_type,
-          details: updatedRequest.details,
-        })
-        .eq("id", updatedRequest.id)
-
-      if (error) throw error
-
-      // Update the local state
-      setRequestsData((prev) => prev.map((req) => (req.id === updatedRequest.id ? updatedRequest : req)))
-
-      toast({
-        title: "Request updated",
-        description: "The request has been successfully updated.",
-      })
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "An error occurred while updating the request.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-      setShowEditModal(false)
-    }
   }
 
   // Handle filter changes
@@ -472,24 +377,6 @@ export function RequestReceivedTable({ requests }: RequestReceivedTableProps) {
                           <Search className="h-4 w-4" />
                           <span className="sr-only">View</span>
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleEditRequest(request)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-500"
-                          onClick={() => handleDeleteRequest(request.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -563,31 +450,6 @@ export function RequestReceivedTable({ requests }: RequestReceivedTableProps) {
 
       {/* Confirmation Modal */}
       <ConfirmationModal isOpen={showConfirmationModal} type={confirmationType} onClose={handleCloseConfirmation} />
-
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleConfirmDelete}
-      />
-
-      {/* Edit Request Modal */}
-      {selectedRequest && (
-        <EditRequestModal
-          request={{
-            ...selectedRequest,
-            userName: selectedRequest.sender?.name || "User",
-            email: selectedRequest.sender?.email || selectedRequest.email,
-            date: format(parseISO(selectedRequest.created_at), "dd-MM-yyyy"),
-            transactionType: selectedRequest.transaction_type || "Investment",
-            details: selectedRequest.details || "No details provided",
-            attachment: selectedRequest.attachment_url || "/placeholder.svg",
-          }}
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          onSave={handleSaveEdit}
-        />
-      )}
     </>
   )
 }

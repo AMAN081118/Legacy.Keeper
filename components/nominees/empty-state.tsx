@@ -17,10 +17,6 @@ export function EmptyState({ onAddNominee }: EmptyStateProps) {
       <p className="text-gray-500 text-center max-w-sm mt-2">
         Add nominees to manage who will have access to your information in case of emergency.
       </p>
-      <Button onClick={onAddNominee} className="mt-6">
-        <UserPlus className="mr-2 h-4 w-4" />
-        Add Nominee
-      </Button>
     </div>
   )
 }

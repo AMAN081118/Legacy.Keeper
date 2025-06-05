@@ -8,9 +8,10 @@ interface NomineesHeaderProps {
   onAddNominee: () => void
   searchQuery: string
   onSearchChange: (query: string) => void
+  onDownload?: () => void
 }
 
-export function NomineesHeader({ nomineeCount, onAddNominee, searchQuery, onSearchChange }: NomineesHeaderProps) {
+export function NomineesHeader({ nomineeCount, onAddNominee, searchQuery, onSearchChange, onDownload }: NomineesHeaderProps) {
   return (
     <div className="flex flex-col space-y-4">
       <div className="flex items-center justify-between">
@@ -47,7 +48,7 @@ export function NomineesHeader({ nomineeCount, onAddNominee, searchQuery, onSear
             />
           </svg>
         </div>
-        <Button variant="outline">
+        <Button variant="outline" onClick={onDownload}>
           <Download className="mr-2 h-4 w-4" />
           Download
         </Button>

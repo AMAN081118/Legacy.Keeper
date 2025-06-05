@@ -284,30 +284,23 @@ export async function updateNominee(formData: FormData) {
       updateData.profile_photo_url = publicUrlData.publicUrl
     }
 
-    // Handle government ID upload
-    const governmentId = formData.get("governmentId") as File
-    if (governmentId && governmentId.size > 0) {
-      const fileExt = governmentId.name.split(".").pop()
-      const fileName = `${uuidv4()}.${fileExt}`
-      const filePath = `${user.user.id}/${fileName}`
-
-      // Use service role for storage operations
-      const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-
-      const { error: uploadError } = await supabaseAdmin.storage.from("nominees").upload(filePath, governmentId, {
-        contentType: governmentId.type,
-        upsert: true,
-      })
-
-      if (uploadError) {
-        console.error("Error uploading government ID:", uploadError)
-        throw new Error(`Error uploading government ID: ${uploadError.message}`)
+    // Handle government ID upload or deletion
+    const deleteGovernmentId = formData.get("deleteGovernmentId") === "true";
+    if (deleteGovernmentId && currentNominee.government_id_url) {
+      // Extract the path from the public URL
+      try {
+        const url = new URL(currentNominee.government_id_url);
+        // The path after the bucket name (e.g. /storage/v1/object/public/nominees/userid/filename.pdf)
+        const pathParts = url.pathname.split("/public/nominees/");
+        if (pathParts.length === 2) {
+          const filePath = pathParts[1];
+          const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+          await supabaseAdmin.storage.from("nominees").remove([filePath]);
+        }
+      } catch (e) {
+        console.error("Error parsing or deleting government ID file:", e);
       }
-
-      // Get the public URL
-      const { data: publicUrlData } = supabaseAdmin.storage.from("nominees").getPublicUrl(filePath)
-
-      updateData.government_id_url = publicUrlData.publicUrl
+      updateData.government_id_url = null;
     }
 
     // Update the nominee
@@ -351,13 +344,58 @@ export async function updateNominee(formData: FormData) {
 export async function deleteNominee(id: string) {
   try {
     const supabase = createServerClient()
+    const adminClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
     const { data: user, error: userError } = await supabase.auth.getUser()
     if (userError || !user.user) {
       throw new Error("User not authenticated")
     }
 
-    const { error } = await supabase.from("nominees").delete().eq("id", id).eq("user_id", user.user.id)
+    // Fetch the nominee record first
+    const { data: nominee, error: fetchError } = await adminClient
+      .from("nominees")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", user.user.id)
+      .single()
+
+    if (fetchError || !nominee) {
+      console.error("Error fetching nominee for delete:", fetchError)
+      throw new Error("Nominee not found")
+    }
+
+    // Delete related notifications for this nominee
+    await adminClient
+      .from("notifications")
+      .delete()
+      .eq("type", "invitation_received")
+      .contains("data", { nomineeId: id })
+
+    // Delete the nominee role from user_roles table
+    // Find the user by nominee email
+    const { data: nomineeUser, error: nomineeUserError } = await adminClient
+      .from("users")
+      .select("id")
+      .eq("email", nominee.email)
+      .single()
+    if (!nomineeUserError && nomineeUser) {
+      const { data: role, error: roleError } = await adminClient
+        .from("roles")
+        .select("id")
+        .eq("name", "nominee")
+        .single()
+      if (!roleError && role) {
+        await adminClient
+          .from("user_roles")
+          .delete()
+          .eq("user_id", nomineeUser.id)
+          .eq("related_user_id", user.user.id)
+          .eq("role_id", role.id)
+      }
+    }
+
+    // Delete nominee record using admin client to bypass RLS
+    const { error } = await adminClient.from("nominees").delete().eq("id", id).eq("user_id", user.user.id)
 
     if (error) {
       console.error("Error deleting nominee:", error)

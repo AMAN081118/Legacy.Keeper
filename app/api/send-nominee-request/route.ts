@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
         message: `You have received a request to be a nominee. Please review and respond.`,
         data: { 
           nomineeId,
+          nomineeEmail: nominee.email,
+          requestedSections: [], // Empty array since this is just a request to be a nominee
           status: "pending"
         },
         read: false,

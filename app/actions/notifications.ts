@@ -7,7 +7,7 @@ export type Notification = {
   id: string;
   title: string;
   message: string;
-  type: "invitation_sent" | "invitation_received" | "system" | "alert";
+  type: "invitation_sent" | "invitation_received" | "system" | "alert" | "nominee_request" | "nominee_request_sent";
   createdAt: string;
   read: boolean;
   data?: {
@@ -16,6 +16,8 @@ export type Notification = {
     inviterName?: string;
     invitationToken?: string;
     onboardingUrl?: string;
+    status?: string;
+    requestedSections?: string[];
     [key: string]: any;
   };
 };

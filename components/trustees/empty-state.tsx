@@ -15,9 +15,6 @@ export function EmptyState({ onAddTrustee }: EmptyStateProps) {
       </div>
       <h3 className="mt-4 text-lg font-medium">No trustees added yet</h3>
       <p className="mt-2 text-sm text-gray-500">Add a trustee to manage your legacy in case of emergency.</p>
-      <Button onClick={onAddTrustee} className="mt-4">
-        + Add Trustee
-      </Button>
     </div>
   )
 }

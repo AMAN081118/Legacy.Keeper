@@ -40,14 +40,11 @@ async function DashboardData({ userId }: { userId: string }) {
       const missingSections = allSections.filter(section => !userAccess.includes(section));
 
       return (
-        <>
-          <div className="p-2 text-xs text-gray-400">{debugInfo}</div>
-          <PermissionRequiredClientWrapper
-            missingSections={missingSections}
-            nomineeEmail={currentRole.user?.email}
-            nomineeName={currentRole.user?.name}
-          />
-        </>
+        <PermissionRequiredClientWrapper
+          missingSections={missingSections}
+          nomineeEmail={currentRole.user?.email}
+          nomineeName={currentRole.user?.name}
+        />
       );
     }
 
@@ -62,7 +59,6 @@ async function DashboardData({ userId }: { userId: string }) {
       }
       return (
         <>
-          <div className="p-2 text-xs text-gray-400">{debugInfo}</div>
           <DashboardHeader userData={trusteeData} />
           <TrusteeRequests />
         </>
@@ -101,7 +97,6 @@ async function DashboardData({ userId }: { userId: string }) {
 
     return (
       <>
-        <div className="p-2 text-xs text-gray-400">{debugInfo}</div>
         <DashboardHeader userData={userData} />
         <SummaryCards summaryData={summaryData} />
 

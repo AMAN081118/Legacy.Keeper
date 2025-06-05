@@ -82,8 +82,8 @@ CREATE TABLE public.transactions (
 CREATE TABLE public.requests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title TEXT NOT NULL,                    -- Request title
-    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    recipient_id UUID REFERENCES public.users(id),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE, -- Sender's user id
+    recipient_id UUID REFERENCES public.users(id), -- Recipient's user id (looked up by email)
     amount DECIMAL(15,2) NOT NULL,
     comment TEXT,
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
@@ -94,6 +94,11 @@ CREATE TABLE public.requests (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
+- `user_id` is the sender, `recipient_id` is the receiver (looked up by email).
+- `status` is constrained to 'pending', 'approved', or 'rejected'.
+- `attachment_url` can store a file path or URL.
+- Foreign keys reference the `users` table.
+- Uses `uuid_generate_v4()` for Postgres. If you use another DB, adjust UUID generation accordingly.
 
 #### 7. Debts and Loans Table
 **Purpose**: Tracks debt and loan information

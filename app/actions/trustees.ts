@@ -320,6 +320,39 @@ export async function deleteTrustee(id: string) {
       return { error: "User not authenticated" }
     }
 
+    // Fetch the trustee record first
+    const { data: trustee, error: fetchError } = await adminClient
+      .from("trustees")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single()
+
+    if (fetchError || !trustee) {
+      console.error("Error fetching trustee for delete:", fetchError)
+      return { error: "Trustee not found" }
+    }
+
+    // Delete related notifications for this trustee
+    await adminClient
+      .from("notifications")
+      .delete()
+      .eq("type", "invitation_received")
+      .contains("data", { trusteeId: id })
+
+    // Delete the trustee role from user_roles table
+    const { error: roleDeleteError } = await adminClient
+      .from("user_roles")
+      .delete()
+      .eq("user_id", trustee.trustee_id)
+      .eq("related_user_id", user.id)
+      .eq("role_id", (await adminClient.from("roles").select("id").eq("name", "trustee").single()).data?.id)
+
+    if (roleDeleteError) {
+      console.error("Error deleting trustee role:", roleDeleteError)
+      return { error: "Failed to delete trustee role" }
+    }
+
     // Delete trustee record using admin client to bypass RLS
     const { error } = await adminClient.from("trustees").delete().eq("id", id).eq("user_id", user.id)
 

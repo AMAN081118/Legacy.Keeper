@@ -8,9 +8,10 @@ import { RequestSentTable } from "./request-sent-table"
 interface RequestTabsProps {
   requestsReceived: any[]
   requestsSent: any[]
+  refreshRequests: () => void
 }
 
-export function RequestTabs({ requestsReceived, requestsSent }: RequestTabsProps) {
+export function RequestTabs({ requestsReceived, requestsSent, refreshRequests }: RequestTabsProps) {
   const [activeTab, setActiveTab] = useState("received")
 
   return (
@@ -33,10 +34,10 @@ export function RequestTabs({ requestsReceived, requestsSent }: RequestTabsProps
           </TabsList>
         </div>
         <TabsContent value="received" className="p-0">
-          <RequestReceivedTable requests={requestsReceived} />
+          <RequestReceivedTable requests={requestsReceived} refreshRequests={refreshRequests} />
         </TabsContent>
         <TabsContent value="sent" className="p-0">
-          <RequestSentTable requests={requestsSent} />
+          <RequestSentTable requests={requestsSent} refreshRequests={refreshRequests} />
         </TabsContent>
       </Tabs>
     </div>

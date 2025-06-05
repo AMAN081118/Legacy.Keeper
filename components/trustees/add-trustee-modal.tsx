@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { addTrustee } from "@/app/actions/trustees"
 import { useToast } from "@/components/ui/use-toast"
+import { createClient } from "@/lib/supabase/client"
 
 interface Trustee {
   id: string
@@ -49,6 +50,35 @@ export function AddTrusteeModal({ isOpen, onClose, onAddTrustee }: AddTrusteeMod
         variant: "destructive",
       })
       return
+    }
+
+    // Prevent user from adding themselves as a trustee
+    try {
+      const supabase = createClient();
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        toast({
+          title: "Error",
+          description: "Could not verify current user.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (userData?.user?.email && userData.user.email.trim().toLowerCase() === email.trim().toLowerCase()) {
+        toast({
+          title: "Invalid Trustee",
+          description: "You cannot add yourself as a trustee.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: "Could not verify current user.",
+        variant: "destructive",
+      });
+      return;
     }
 
     setIsSubmitting(true)

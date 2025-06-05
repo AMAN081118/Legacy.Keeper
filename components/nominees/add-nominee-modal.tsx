@@ -8,14 +8,16 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { addNominee } from "@/app/actions/nominees"
 import { X } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 
 interface AddNomineeModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  existingNomineeEmails?: string[]
 }
 
-export function AddNomineeModal({ isOpen, onClose, onSuccess }: AddNomineeModalProps) {
+export function AddNomineeModal({ isOpen, onClose, onSuccess, existingNomineeEmails = [] }: AddNomineeModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(null)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
@@ -28,6 +30,50 @@ export function AddNomineeModal({ isOpen, onClose, onSuccess }: AddNomineeModalP
 
     try {
       const formData = new FormData(e.currentTarget)
+      const email = formData.get("email")?.toString().trim().toLowerCase() || ""
+
+      // Check: Prevent user from adding themselves as a nominee
+      try {
+        const supabase = createClient();
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          toast({
+            title: "Error",
+            description: "Could not verify current user.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        if (userData?.user?.email && userData.user.email.trim().toLowerCase() === email) {
+          toast({
+            title: "Invalid Nominee",
+            description: "You cannot add yourself as a nominee.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+      } catch (e) {
+        toast({
+          title: "Error",
+          description: "Could not verify current user.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Check: Prevent adding the same nominee twice
+      if (existingNomineeEmails.includes(email)) {
+        toast({
+          title: "Duplicate Nominee",
+          description: "This nominee has already been added.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
 
       // Add selected categories to formData
       selectedCategories.forEach((category) => {
