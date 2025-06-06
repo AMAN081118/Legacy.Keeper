@@ -1,10 +1,10 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
-import type { BlogPost as BlogPostType } from "@/lib/blog-data"
+import type { BlogPost } from "@/lib/landing/blog-data"
 
 interface BlogPostProps {
-  post: BlogPostType
+  post: BlogPost
 }
 
 export function BlogPost({ post }: BlogPostProps) {

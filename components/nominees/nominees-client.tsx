@@ -20,6 +20,8 @@ interface Nominee {
   access_categories: string[]
   profile_photo_url: string | null
   government_id_url: string | null
+  status: string
+  invitation_sent_at: string | null
 }
 
 interface NomineesClientProps {

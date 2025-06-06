@@ -158,6 +158,9 @@ export async function addNominee(formData: FormData) {
     const now = new Date().toISOString()
 
     // Insert the nominee
+    if (!user?.user?.id) {
+      throw new Error("User ID not found")
+    }
     const { data: nominee, error } = await supabase
       .from("nominees")
       .insert({
@@ -183,11 +186,14 @@ export async function addNominee(formData: FormData) {
 
     // Send invitation email
     try {
+      if (!user?.user?.email) {
+        throw new Error("User email not found")
+      }
       await sendInvitationEmail({
         nomineeId: nominee.id,
         nomineeName: name,
         nomineeEmail: email,
-        inviterName: user.user.name || user.user.email,
+        inviterName: user.user.email,
         invitationToken,
       })
     } catch (emailError) {
@@ -320,11 +326,14 @@ export async function updateNominee(formData: FormData) {
     // If email has changed, send a new invitation email
     if (email !== currentNominee.email) {
       try {
+        if (!user?.user?.email) {
+          throw new Error("User email not found")
+        }
         await sendInvitationEmail({
           nomineeId: nominee.id,
           nomineeName: name,
           nomineeEmail: email,
-          inviterName: user.user.name || user.user.email,
+          inviterName: user.user.email,
           invitationToken: updateData.invitation_token,
         })
       } catch (emailError) {
@@ -454,11 +463,14 @@ export async function resendInvitation(id: string) {
 
     // Send the invitation email
     try {
+      if (!user?.user?.email) {
+        throw new Error("User email not found")
+      }
       await sendInvitationEmail({
         nomineeId: nominee.id,
         nomineeName: nominee.name,
         nomineeEmail: nominee.email,
-        inviterName: user.user.name || user.user.email,
+        inviterName: user.user.email,
         invitationToken,
       })
     } catch (emailError) {
@@ -476,70 +488,38 @@ export async function resendInvitation(id: string) {
 // Verify invitation token and update nominee status
 export async function verifyInvitation(token: string, action: "accept" | "reject") {
   try {
-    const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const supabase = createServerClient()
 
-    // Find the nominee with this token
-    const { data: nominee, error: fetchError } = await supabaseAdmin
+    const { data: user, error: userError } = await supabase.auth.getUser()
+    if (userError || !user?.user) {
+      throw new Error("User not authenticated")
+    }
+
+    // Get the nominee by invitation token
+    const { data: nominee, error: nomineeError } = await supabase
       .from("nominees")
       .select("*")
       .eq("invitation_token", token)
       .single()
 
-    if (fetchError) {
-      console.error("Error fetching nominee:", fetchError)
-      throw new Error(`Invalid or expired invitation token`)
+    if (nomineeError || !nominee) {
+      throw new Error("Invalid or expired invitation token")
     }
 
-    // Update the nominee status and invalidate token
-    const now = new Date().toISOString()
-    const { error: updateError } = await supabaseAdmin
+    // Update the nominee's status
+    const { error: updateError } = await supabase
       .from("nominees")
       .update({
         status: action === "accept" ? "accepted" : "rejected",
-        invitation_responded_at: now,
-        invitation_token: null
+        updated_at: new Date().toISOString(),
       })
       .eq("id", nominee.id)
 
     if (updateError) {
-      console.error("Error updating nominee status:", updateError)
       throw new Error(`Error updating nominee status: ${updateError.message}`)
     }
 
-    // Delete related notifications for this nominee invitation
-    // Find the user by nominee email
-    const { data: user, error: userError } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("email", nominee.email)
-      .single()
-    if (!userError && user) {
-      await supabaseAdmin
-        .from("notifications")
-        .delete()
-        .eq("user_id", user.id)
-        .contains("data", { nomineeId: nominee.id })
-    }
-
-    // If action is 'accept', assign nominee role in user_roles
-    if (action === "accept") {
-      // Get the 'nominee' role id
-      const { data: role, error: roleError } = await supabaseAdmin
-        .from("roles")
-        .select("id")
-        .eq("name", "nominee")
-        .single()
-      if (!roleError && role) {
-        await supabaseAdmin.from("user_roles").insert({
-          user_id: user.id,
-          role_id: role.id,
-          related_user_id: nominee.user_id, // inviter
-          created_at: new Date().toISOString(),
-        })
-      }
-    }
-
-    return { success: true, action }
+    return { success: true }
   } catch (error) {
     console.error("Error in verifyInvitation:", error)
     return { success: false, error: String(error) }

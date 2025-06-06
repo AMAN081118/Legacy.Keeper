@@ -31,7 +31,7 @@ export default function VerifyNomineePage() {
         setAction(selectedAction)
       } else {
         setStatus("error")
-        setError(result.error)
+        setError(result.error || "An unknown error occurred")
       }
     } catch (error) {
       setStatus("error")

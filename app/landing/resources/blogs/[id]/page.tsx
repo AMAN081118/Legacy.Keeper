@@ -1,28 +1,35 @@
 import { Footer } from "@/components/landing/footer"
 import { NewsletterSubscribe } from "@/components/landing/newsletter-subscribe"
 import { BlogPost } from "@/components/landing/blog-post"
-import { getBlogPost } from "@/lib/blog-data"
+import { getBlogPost } from "@/lib/landing/blog-data"
 import { notFound } from "next/navigation"
+import { Metadata } from "next"
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
-  const id = Number.parseInt(params.id)
+type Props = {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const resolvedParams = await params
+  const id = Number.parseInt(resolvedParams.id)
   const post = getBlogPost(id)
 
   if (!post) {
     return {
-      title: "Blog Post Not Found - Legacy Keeper",
-      description: "The requested blog post could not be found.",
+      title: "Blog Post Not Found",
     }
   }
 
   return {
-    title: `${post.title} - Legacy Keeper Blog`,
+    title: post.title,
     description: post.excerpt,
   }
 }
 
-export default function BlogPostPage({ params }: { params: { id: string } }) {
-  const id = Number.parseInt(params.id)
+export default async function BlogPostPage({ params }: Props) {
+  const resolvedParams = await params
+  const id = Number.parseInt(resolvedParams.id)
   const post = getBlogPost(id)
 
   if (!post) {

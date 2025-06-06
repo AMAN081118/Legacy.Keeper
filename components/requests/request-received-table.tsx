@@ -231,16 +231,16 @@ export function RequestReceivedTable({ requests, refreshRequests }: RequestRecei
       setFilters({
         ...filters,
         dateRange: {
-          ...filters.dateRange,
           from: undefined,
+          to: filters.dateRange?.to
         },
       })
     } else if (filterType.startsWith("To:")) {
       setFilters({
         ...filters,
         dateRange: {
-          ...filters.dateRange,
-          to: undefined,
+          from: filters.dateRange?.from,
+          to: undefined
         },
       })
     }
@@ -252,8 +252,8 @@ export function RequestReceivedTable({ requests, refreshRequests }: RequestRecei
       status: "all",
       dateRange: {
         from: undefined,
-        to: undefined,
-      },
+        to: undefined
+      }
     })
   }
 

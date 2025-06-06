@@ -29,7 +29,6 @@ interface AddTransactionModalProps {
 export function AddTransactionModal({ isOpen, onClose, onSave }: AddTransactionModalProps) {
   const [transaction, setTransaction] = useState<Partial<Tables<"transactions">>>({
     name: "",
-    person: "",
     amount: 0,
     transaction_type: "Paid",
     payment_mode: "Phone Pay",
@@ -153,12 +152,13 @@ export function AddTransactionModal({ isOpen, onClose, onSave }: AddTransactionM
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="person-party">Person/Party</Label>
+              <Label htmlFor="amount">Amount</Label>
               <Input
-                id="person-party"
-                value={transaction.person}
-                onChange={(e) => handleInputChange("person", e.target.value)}
-                placeholder="Netflix"
+                id="amount"
+                type="number"
+                value={transaction.amount}
+                onChange={(e) => handleInputChange("amount", parseFloat(e.target.value))}
+                placeholder="0.00"
               />
             </div>
           </div>
@@ -182,7 +182,7 @@ export function AddTransactionModal({ isOpen, onClose, onSave }: AddTransactionM
             <div className="space-y-2">
               <Label htmlFor="payment-mode">Payment Mode</Label>
               <Select
-                value={transaction.payment_mode}
+                value={transaction.payment_mode || ""}
                 onValueChange={(value) => handleInputChange("payment_mode", value)}
               >
                 <SelectTrigger id="payment-mode">
@@ -198,41 +198,8 @@ export function AddTransactionModal({ isOpen, onClose, onSave }: AddTransactionM
                   <SelectItem value="Google Pay">Google Pay</SelectItem>
                   <SelectItem value="PayPal">PayPal</SelectItem>
                   <SelectItem value="Check">Check</SelectItem>
-                  <SelectItem value="Wire Transfer">Wire Transfer</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                type="number"
-                value={transaction.amount?.toString()}
-                onChange={(e) => handleInputChange("amount", Number.parseFloat(e.target.value))}
-                placeholder="₹40,000"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="date">Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="date"
-                    variant={"outline"}
-                    className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <CalendarComponent mode="single" selected={date} onSelect={handleDateSelect} initialFocus />
-                </PopoverContent>
-              </Popover>
             </div>
           </div>
 
@@ -242,51 +209,35 @@ export function AddTransactionModal({ isOpen, onClose, onSave }: AddTransactionM
               id="description"
               value={transaction.description || ""}
               onChange={(e) => handleInputChange("description", e.target.value)}
-              placeholder="Enter transaction details here"
-              className="min-h-[100px] resize-none"
+              placeholder="Add any additional details about the transaction"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="receipt">Receipt/Invoice</Label>
-            <div className="border-2 border-dashed border-blue-300 rounded-md p-6 text-center">
-              <div className="flex flex-col items-center justify-center">
-                <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                <p className="text-sm font-medium">Drag & Drop files here</p>
-                <p className="text-xs text-muted-foreground mt-1">Supported format : pdf, jpg, jpeg.</p>
-                <p className="text-xs text-muted-foreground mt-1">Or</p>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="mt-2 bg-[#0a2642] text-white hover:bg-[#0a2642]/90"
-                  onClick={() => document.getElementById("file-upload")?.click()}
-                  disabled={uploading}
-                >
-                  {uploading ? "Uploading..." : "Browse Files"}
+            <Label htmlFor="attachment">Attachment</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="attachment"
+                type="file"
+                onChange={handleFileChange}
+                accept=".pdf,.jpg,.jpeg,.png"
+                className="flex-1"
+              />
+              {fileName && (
+                <Button variant="outline" size="sm" onClick={() => setSelectedFile(null)}>
+                  <X className="h-4 w-4" />
                 </Button>
-                <input
-                  id="file-upload"
-                  type="file"
-                  className="hidden"
-                  accept=".pdf,.jpg,.jpeg"
-                  onChange={handleFileChange}
-                />
-                {fileName && <p className="text-xs mt-2 text-green-600">File selected: {fileName}</p>}
-              </div>
+              )}
             </div>
+            {fileName && <p className="text-sm text-muted-foreground">{fileName}</p>}
           </div>
 
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={onClose} className="sm:w-auto">
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button
-              variant="default"
-              onClick={handleSubmit}
-              className="sm:w-auto"
-              disabled={uploading || !transaction.name || !transaction.amount}
-            >
-              Submit
+            <Button onClick={handleSubmit} disabled={uploading}>
+              {uploading ? "Saving..." : "Save Transaction"}
             </Button>
           </div>
         </div>

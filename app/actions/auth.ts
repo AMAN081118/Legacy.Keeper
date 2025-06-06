@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-export async function registerUser(formData: FormData) {
+export async function registerUser(prevState: { error: string | null }, formData: FormData) {
   try {
     // Get form data
     const email = formData.get("email") as string
@@ -73,10 +73,10 @@ export async function registerUser(formData: FormData) {
       }
     }
 
-    // Set the auth cookie
-    const cookieStore = cookies()
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({
-      user_id: authData.user.id,
+    // Create a session by signing in
+    const { data: sessionData, error: sessionError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     })
 
     if (sessionError) {

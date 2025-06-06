@@ -31,38 +31,21 @@ async function ensureDigitalAccountsBucket() {
 }
 
 // Helper function to handle Supabase requests with retry logic
-async function safeSupabaseRequest<T>(requestFn: () => Promise<T>, maxRetries = 3): Promise<T> {
+async function safeSupabaseRequest<T>(requestFn: () => Promise<{ data: any; error: any }>, maxRetries = 3): Promise<{ data: any; error: any }> {
   let lastError: any = null
-  let retryCount = 0
-
-  while (retryCount < maxRetries) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      // Add exponential backoff delay
-      if (retryCount > 0) {
-        const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 10000)
-        await new Promise((resolve) => setTimeout(resolve, delay))
-      }
-
-      return await requestFn()
-    } catch (error: any) {
+      const response = await requestFn()
+      return response
+    } catch (error) {
       lastError = error
-
-      // Check if it's a rate limiting error
-      const isRateLimitError =
-        error.message?.includes("Too Many Requests") ||
-        error.message?.includes("429") ||
-        error.message?.includes("Unexpected token")
-
-      if (isRateLimitError && retryCount < maxRetries - 1) {
-        retryCount++
-        console.log(`Rate limit hit, retrying (${retryCount}/${maxRetries})...`)
-        continue
+      if (attempt === maxRetries) {
+        throw error
       }
-
-      throw error
+      // Wait before retrying (exponential backoff)
+      await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 1000))
     }
   }
-
   throw lastError
 }
 
@@ -71,9 +54,14 @@ export async function getDigitalAccounts(userId: string) {
   const supabase = createServerActionClient({ cookies })
 
   try {
-    const { data, error } = await safeSupabaseRequest(() =>
-      supabase.from("digital_accounts").select("*").eq("user_id", userId).order("date", { ascending: false }),
-    )
+    const { data, error } = await safeSupabaseRequest<{ data: any[] | null; error: any }>(async () => {
+      const response = await supabase
+        .from("digital_accounts")
+        .select("*")
+        .eq("user_id", userId)
+        .order("date", { ascending: false })
+      return response
+    })
 
     if (error) {
       return { success: false, error: error.message }
@@ -94,9 +82,14 @@ export async function getDigitalAccount(id: string) {
   const supabase = createServerActionClient({ cookies })
 
   try {
-    const { data, error } = await safeSupabaseRequest(() =>
-      supabase.from("digital_accounts").select("*").eq("id", id).single(),
-    )
+    const { data, error } = await safeSupabaseRequest<{ data: any | null; error: any }>(async () => {
+      const response = await supabase
+        .from("digital_accounts")
+        .select("*")
+        .eq("id", id)
+        .single()
+      return response
+    })
 
     if (error) {
       return { success: false, error: error.message }
@@ -113,52 +106,34 @@ export async function getDigitalAccount(id: string) {
 }
 
 // Add a new digital account
-export async function addDigitalAccount({
-  userId,
-  accountName,
-  accountIdNo,
-  passwordPhone,
-  loginContact,
-  description,
-  governmentIdUrl,
-  date,
-}: {
-  userId: string
-  accountName: string
-  accountIdNo?: string
-  passwordPhone?: string
-  loginContact?: string
-  description?: string
-  governmentIdUrl?: string | null
-  date: string
-}) {
+export async function addDigitalAccount(formData: FormData) {
   const supabase = createServerActionClient({ cookies })
 
   try {
-    const { data, error } = await safeSupabaseRequest(() =>
-      supabase
+    const { data, error } = await safeSupabaseRequest<{ data: any | null; error: any }>(async () => {
+      const response = await supabase
         .from("digital_accounts")
         .insert({
-          id: uuidv4(),
-          user_id: userId,
-          account_name: accountName,
-          account_id_no: accountIdNo,
-          password_phone: passwordPhone,
-          login_contact: loginContact,
-          description,
-          government_id_url: governmentIdUrl,
-          date,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          user_id: formData.get("user_id") as string,
+          platform: formData.get("platform") as string,
+          username: formData.get("username") as string,
+          email: formData.get("email") as string,
+          password: formData.get("password") as string,
+          recovery_email: formData.get("recovery_email") as string,
+          recovery_phone: formData.get("recovery_phone") as string,
+          two_factor_enabled: formData.get("two_factor_enabled") === "true",
+          notes: formData.get("notes") as string,
+          date: new Date().toISOString(),
         })
-        .select(),
-    )
+        .select()
+        .single()
+      return response
+    })
 
     if (error) {
       return { success: false, error: error.message }
     }
 
-    revalidatePath("/dashboard/digital-accounts")
     return { success: true, data }
   } catch (error: any) {
     console.error("Error adding digital account:", error)
@@ -170,53 +145,34 @@ export async function addDigitalAccount({
 }
 
 // Update an existing digital account
-export async function updateDigitalAccount({
-  id,
-  userId,
-  accountName,
-  accountIdNo,
-  passwordPhone,
-  loginContact,
-  description,
-  governmentIdUrl,
-  date,
-}: {
-  id: string
-  userId: string
-  accountName: string
-  accountIdNo?: string
-  passwordPhone?: string
-  loginContact?: string
-  description?: string
-  governmentIdUrl?: string | null
-  date: string
-}) {
+export async function updateDigitalAccount(formData: FormData) {
   const supabase = createServerActionClient({ cookies })
 
   try {
-    const { data, error } = await safeSupabaseRequest(() =>
-      supabase
+    const { data, error } = await safeSupabaseRequest<{ data: any | null; error: any }>(async () => {
+      const response = await supabase
         .from("digital_accounts")
         .update({
-          account_name: accountName,
-          account_id_no: accountIdNo,
-          password_phone: passwordPhone,
-          login_contact: loginContact,
-          description,
-          government_id_url: governmentIdUrl,
-          date,
+          platform: formData.get("platform") as string,
+          username: formData.get("username") as string,
+          email: formData.get("email") as string,
+          password: formData.get("password") as string,
+          recovery_email: formData.get("recovery_email") as string,
+          recovery_phone: formData.get("recovery_phone") as string,
+          two_factor_enabled: formData.get("two_factor_enabled") === "true",
+          notes: formData.get("notes") as string,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", id)
-        .eq("user_id", userId)
-        .select(),
-    )
+        .eq("id", formData.get("id") as string)
+        .select()
+        .single()
+      return response
+    })
 
     if (error) {
       return { success: false, error: error.message }
     }
 
-    revalidatePath("/dashboard/digital-accounts")
     return { success: true, data }
   } catch (error: any) {
     console.error("Error updating digital account:", error)
@@ -232,40 +188,18 @@ export async function deleteDigitalAccount(id: string) {
   const supabase = createServerActionClient({ cookies })
 
   try {
-    // First, get the account to check if it has an attachment
-    const { data: account, error: fetchError } = await safeSupabaseRequest(() =>
-      supabase.from("digital_accounts").select("government_id_url").eq("id", id).single(),
-    )
-
-    if (fetchError) {
-      return { success: false, error: fetchError.message }
-    }
-
-    // If there's an attachment, delete it from storage
-    if (account?.government_id_url) {
-      try {
-        const bucketName = await ensureDigitalAccountsBucket()
-        const filePath = account.government_id_url.split(`${bucketName}/`)[1]
-
-        if (filePath) {
-          await safeSupabaseRequest(() => supabase.storage.from(bucketName).remove([filePath]))
-        }
-      } catch (storageError) {
-        console.error("Error with storage operation:", storageError)
-        // Continue with account deletion even if file deletion fails
-      }
-    }
-
-    // Delete the account record
-    const { error: deleteError } = await safeSupabaseRequest(() =>
-      supabase.from("digital_accounts").delete().eq("id", id),
-    )
+    const { error: deleteError } = await safeSupabaseRequest(async () => {
+      const response = await supabase
+        .from("digital_accounts")
+        .delete()
+        .eq("id", id)
+      return response
+    })
 
     if (deleteError) {
       return { success: false, error: deleteError.message }
     }
 
-    revalidatePath("/dashboard/digital-accounts")
     return { success: true }
   } catch (error: any) {
     console.error("Error deleting digital account:", error)

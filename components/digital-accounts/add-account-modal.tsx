@@ -52,16 +52,18 @@ export function AddAccountModal({ isOpen, onClose, onSuccess, userId }: AddAccou
 
     setIsSubmitting(true)
     try {
-      const result = await addDigitalAccount({
-        userId,
-        accountName,
-        accountIdNo,
-        passwordPhone,
-        loginContact,
-        description,
-        governmentIdUrl,
-        date: date.toISOString(),
-      })
+      const formData = new FormData()
+      formData.append("name", accountName)
+      formData.append("type", "digital")
+      formData.append("account_id", accountIdNo)
+      formData.append("password", passwordPhone)
+      formData.append("contact_info", loginContact)
+      formData.append("description", description)
+      formData.append("government_id_url", governmentIdUrl || "")
+      formData.append("date", date.toISOString())
+      formData.append("userId", userId)
+
+      const result = await addDigitalAccount(formData)
 
       if (result.success) {
         resetForm()
@@ -186,10 +188,9 @@ export function AddAccountModal({ isOpen, onClose, onSuccess, userId }: AddAccou
           <div className="grid grid-cols-1 gap-2">
             <Label>Government ID</Label>
             <FileUpload
-              endpoint="governmentIdUpload"
-              value={governmentIdUrl}
-              onChange={setGovernmentIdUrl}
-              fileTypes="image/*,.pdf"
+              bucket="digital-accounts"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onUploadComplete={(url) => setGovernmentIdUrl(url)}
             />
             <p className="text-xs text-muted-foreground">Supported formats: PDF, JPG, JPEG, PNG</p>
           </div>

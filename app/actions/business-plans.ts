@@ -111,7 +111,10 @@ export async function addBusinessPlan(formData: FormData) {
     return { success: true, error: null }
   } catch (error) {
     console.error("Error adding business plan:", error)
-    return { error: error.message, success: false }
+    return { 
+      error: error instanceof Error ? error.message : "An unknown error occurred", 
+      success: false 
+    }
   }
 }
 
@@ -193,14 +196,20 @@ export async function updateBusinessPlan(formData: FormData) {
 
     if (error) {
       console.error("Error updating business plan:", error)
-      return { error: error.message, success: false }
+      return { 
+        error: error instanceof Error ? error.message : "An unknown error occurred", 
+        success: false 
+      }
     }
 
     revalidatePath("/dashboard/business-plans")
     return { success: true, error: null }
   } catch (error) {
     console.error("Error updating business plan:", error)
-    return { error: error.message, success: false }
+    return { 
+      error: error instanceof Error ? error.message : "An unknown error occurred", 
+      success: false 
+    }
   }
 }
 

@@ -156,20 +156,22 @@ export function EditTransactionModal({ transaction, isOpen, onClose, onSave }: E
         <div className="grid gap-6 p-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="transaction-name">Transaction Name</Label>
+              <Label htmlFor="name">Name</Label>
               <Input
-                id="transaction-name"
+                id="name"
                 value={editedTransaction.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
+                placeholder="Enter transaction name"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="person-party">Person/Party</Label>
+              <Label htmlFor="amount">Amount</Label>
               <Input
-                id="person-party"
-                value={editedTransaction.person}
-                onChange={(e) => handleInputChange("person", e.target.value)}
-                placeholder="Netflix"
+                id="amount"
+                type="number"
+                value={editedTransaction.amount}
+                onChange={(e) => handleInputChange("amount", parseFloat(e.target.value))}
+                placeholder="Enter amount"
               />
             </div>
           </div>
@@ -217,15 +219,6 @@ export function EditTransactionModal({ transaction, isOpen, onClose, onSave }: E
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                type="number"
-                value={editedTransaction.amount.toString()}
-                onChange={(e) => handleInputChange("amount", Number.parseFloat(e.target.value))}
-              />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="date">Date</Label>
               <Popover>

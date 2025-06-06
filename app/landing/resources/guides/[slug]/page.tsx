@@ -3,35 +3,34 @@ import { Newsletter } from "@/components/landing/newsletter"
 import { GuideDetail } from "@/components/landing/guide-detail"
 import { guidesData } from "@/lib/landing/guides-data"
 import { notFound } from "next/navigation"
+import { Metadata } from "next"
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const guide = guidesData.find((guide) => guide.slug === params.slug)
+type PageProps = {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
 
-  if (!guide) {
-    return {
-      title: "Guide Not Found - Legacy Keeper",
-      description: "The requested guide could not be found.",
-    }
-  }
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const resolvedParams = await params
+  const guide = guidesData.find((g) => g.slug === resolvedParams.slug)
+  if (!guide) return {}
 
   return {
-    title: `${guide.title} - Legacy Keeper Guides`,
+    title: guide.title,
     description: guide.description,
   }
 }
 
-export default function GuideDetailPage({ params }: { params: { slug: string } }) {
-  const guide = guidesData.find((guide) => guide.slug === params.slug)
-
-  if (!guide) {
-    notFound()
-  }
+export default async function GuidePage({ params }: PageProps) {
+  const resolvedParams = await params
+  const guide = guidesData.find((g) => g.slug === resolvedParams.slug)
+  if (!guide) notFound()
 
   return (
-    <main className="min-h-screen">
+    <>
       <GuideDetail guide={guide} />
       <Newsletter />
       <Footer />
-    </main>
+    </>
   )
 }

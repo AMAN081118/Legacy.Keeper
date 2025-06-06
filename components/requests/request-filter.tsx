@@ -89,7 +89,10 @@ export function RequestFilter({ filters, onFilterChange, onClose }: RequestFilte
                 value={dateRange?.from ? dateRange.from.toISOString().split("T")[0] : ""}
                 onChange={e => {
                   const val = e.target.value ? new Date(e.target.value) : undefined;
-                  setDateRange({ ...dateRange, from: val })
+                  setDateRange(prev => ({
+                    from: val,
+                    to: prev?.to
+                  }))
                 }}
                 placeholder="From date"
               />
@@ -104,7 +107,10 @@ export function RequestFilter({ filters, onFilterChange, onClose }: RequestFilte
                 value={dateRange?.to ? dateRange.to.toISOString().split("T")[0] : ""}
                 onChange={e => {
                   const val = e.target.value ? new Date(e.target.value) : undefined;
-                  setDateRange({ ...dateRange, to: val })
+                  setDateRange(prev => ({
+                    from: prev?.from,
+                    to: val
+                  }))
                 }}
                 placeholder="To date"
               />

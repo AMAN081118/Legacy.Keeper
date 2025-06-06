@@ -18,66 +18,9 @@ export function PricingPlans() {
   const [minutes, setMinutes] = useState(8)
   const [seconds, setSeconds] = useState(5)
 
-  const initializeRazorpay = () => {
-    return new Promise((resolve) => {
-      const script = document.createElement("script")
-      script.src = "https://checkout.razorpay.com/v1/checkout.js"
-      script.onload = () => resolve(true)
-      script.onerror = () => resolve(false)
-      document.body.appendChild(script)
-    })
-  }
-
-  const handlePayment = async (amount: number, plan: string) => {
-    try {
-      const res = await initializeRazorpay()
-      if (!res) {
-        alert("Razorpay SDK failed to load")
-        return
-      }
-
-      // Make API call to your backend to create order
-      const response = await fetch("/api/create-order", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: amount * 100, // Convert to paise
-          plan: plan,
-        }),
-      })
-
-      const data = await response.json()
-
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: data.amount,
-        currency: "INR",
-        name: "Legacy Keeper",
-        description: `${plan} Plan Subscription`,
-        order_id: data.id,
-        handler: function (response: any) {
-          // Handle successful payment
-          console.log(response)
-          // You can redirect to a success page or show a success message
-          router.push("/")
-        },
-        prefill: {
-          name: "User Name",
-          email: "user@example.com",
-          contact: "9999999999",
-        },
-        theme: {
-          color: "#2563eb",
-        },
-      }
-
-      const paymentObject = new window.Razorpay(options)
-      paymentObject.open()
-    } catch (error) {
-      console.error("Payment failed:", error)
-    }
+  const handleSubscribe = (plan: string) => {
+    // Redirect to registration page with plan info
+    router.push(`/registration?plan=${plan}`)
   }
 
   useEffect(() => {
@@ -120,7 +63,7 @@ export function PricingPlans() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Free Trial */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="p-6">
@@ -159,7 +102,7 @@ export function PricingPlans() {
               </div>
               <Button 
                 className="w-full bg-blue-900 hover:bg-blue-800"
-                onClick={() => handlePayment(600, "Basic")}
+                onClick={() => handleSubscribe("Basic")}
               >
                 Subscribe Now
               </Button>
@@ -187,7 +130,7 @@ export function PricingPlans() {
               </div>
               <Button 
                 className="w-full bg-green-600 hover:bg-green-700"
-                onClick={() => handlePayment(1500, "Premium")}
+                onClick={() => handleSubscribe("Premium")}
               >
                 Subscribe Now
               </Button>

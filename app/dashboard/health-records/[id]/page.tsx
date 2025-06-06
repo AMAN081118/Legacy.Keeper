@@ -10,18 +10,26 @@ import { EditHealthConditionModal } from "@/components/health-records/edit-healt
 import { ProfileEditButton } from "@/components/health-records/profile-edit-button"
 import { HealthConditionActions } from "@/components/health-records/health-condition-actions"
 
-export default async function HealthRecordDetailPage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default async function Page({ params, searchParams }: PageProps) {
+  const { id } = await params
+  await searchParams // We need to await this even if we don't use it
+
   const supabase = createServerComponentClient({ cookies })
 
   // Fetch the health record
-  const { data: record, error } = await supabase.from("health_records").select("*").eq("id", params.id).single()
+  const { data: record, error } = await supabase.from("health_records").select("*").eq("id", id).single()
 
   if (error || !record) {
     notFound()
   }
 
   // Fetch health conditions for this record
-  const healthConditions = await getHealthConditions(params.id)
+  const healthConditions = await getHealthConditions(id)
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "N/A"
@@ -92,11 +100,7 @@ export default async function HealthRecordDetailPage({ params }: { params: { id:
       {/* Health Conditions */}
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-lg font-semibold">Health Conditions</h2>
-        <AddHealthConditionModal healthRecordId={record.id} triggerButton={
-          <button className="flex items-center gap-2 px-3 py-1 bg-[#0a2642] text-white rounded hover:bg-[#0a2642]/90">
-            <PlusCircle className="w-4 h-4" /> Add Health Condition
-          </button>
-        } />
+        <AddHealthConditionModal healthRecordId={record.id} />
       </div>
         <div className="bg-white rounded-lg border p-6 mt-4">
           {healthConditions && healthConditions.length > 0 ? (
@@ -123,7 +127,7 @@ export default async function HealthRecordDetailPage({ params }: { params: { id:
                 <img src="/placeholder-uvtex.png" alt="No health conditions" className="mx-auto h-30 w-30" />
                 <p className="mt-4 text-gray-500">No Health Conditions Found</p>
               </div>
-              <AddHealthConditionModal healthRecordId={params.id} />
+              <AddHealthConditionModal healthRecordId={id} />
             </div>
           )}
       </div>

@@ -1,6 +1,14 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createServerClient } from "@/lib/supabase/server"
 
+interface Role {
+  name: string;
+}
+
+interface UserRole {
+  roles: Role;
+}
+
 /**
  * Ensures a user profile exists in the users table
  * This function should be called before any operation that requires a user profile
@@ -161,7 +169,10 @@ export async function validateUserSetup(userId: string) {
     return { 
       valid: true, 
       profile, 
-      roles: roles?.map(r => r.roles?.name).filter(Boolean) || [] 
+      roles: roles?.map(r => {
+        const role = r.roles as unknown as Role;
+        return role?.name || '';
+      }).filter(Boolean) || []
     }
   } catch (error) {
     return { 

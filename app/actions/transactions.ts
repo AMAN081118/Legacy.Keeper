@@ -1,7 +1,11 @@
 import { cookies } from "next/headers"
 import { createServerClient } from "@/lib/supabase/server"
+import type { Tables } from "@/lib/supabase/database.types"
 
-export async function getTransactionsForRole(sessionUserId: string, currentRole: { name: string, relatedUser?: { email: string | null } | null }) {
+export async function getTransactionsForRole(
+  sessionUserId: string, 
+  currentRole: { name: string, relatedUser?: { email: string | null } | null }
+): Promise<Tables<"transactions">[]> {
   const supabase = createServerClient()
   let userId = sessionUserId
 

@@ -21,8 +21,10 @@ export default async function BusinessPlansPage() {
   }
   let currentRole = null
   try {
-    currentRole = await getCurrentRoleFromSession(cookieStore)
-  } catch {}
+    currentRole = await getCurrentRoleFromSession()
+  } catch (error) {
+    console.error("Error getting current role:", error)
+  }
 
   // --- GUARD: Only allow access if user is not nominee, or nominee with 'Financial Planning' access ---
   if (

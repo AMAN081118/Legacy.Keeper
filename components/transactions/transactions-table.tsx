@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Download, Filter, Search, X, Pencil, Trash2, Plus, FileText } from "lucide-react"
+import { Download, Filter, Search, X, Pencil, Trash2, Plus, FileText, MoreHorizontal, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -16,34 +16,58 @@ import { AddTransactionModal } from "./add-transaction-modal"
 import { EditTransactionModal } from "./edit-transaction-modal"
 import { DeleteTransactionModal } from "./delete-transaction-modal"
 import { TransactionDetailsModal } from "./transaction-details-modal"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Pagination } from "@/components/ui/pagination"
 import type { Tables } from "@/lib/supabase/database.types"
 
+interface Transaction {
+  id: string
+  name: string
+  user_id: string
+  amount: number
+  transaction_type: "Paid" | "Received"
+  payment_mode: string | null
+  date: string
+  description: string | null
+  attachment_url: string | null
+  created_at: string
+  updated_at: string
+}
+
+interface TransactionFilters {
+  paymentMode: string;
+  dateRange: {
+    from: Date | undefined;
+    to: Date | undefined;
+  };
+}
+
 interface TransactionsTableProps {
-  transactions: Tables<"transactions">[]
-  currentRole?: { name: string; relatedUser?: { name: string | null; email: string | null } | null }
+  transactions: Transaction[]
+  currentRole: string
 }
 
-type FilterOptions = {
-  paymentMode: string
-  dateRange?: {
-    from: Date | undefined
-    to: Date | undefined
-  }
-}
-
-export function TransactionsTable({ transactions, currentRole }: TransactionsTableProps) {
-  const [transactionsData, setTransactionsData] = useState<Tables<"transactions">[]>(transactions)
-  const [searchQuery, setSearchQuery] = useState("")
+export function TransactionsTable({ transactions: initialTransactions, currentRole }: TransactionsTableProps) {
+  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions)
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState("5")
-  const [selectedTransaction, setSelectedTransaction] = useState<Tables<"transactions"> | null>(null)
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [showDetailsModal, setShowDetailsModal] = useState(false)
-  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null)
-  const [filters, setFilters] = useState<FilterOptions>({
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [filters, setFilters] = useState<TransactionFilters>({
     paymentMode: "all",
+    dateRange: {
+      from: undefined,
+      to: undefined
+    }
   })
   const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
@@ -58,13 +82,37 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
   ])
   const [activePaymentMethod, setActivePaymentMethod] = useState("all")
 
-  // Update transactions data when props change
-  useEffect(() => {
-    setTransactionsData(transactions)
-  }, [transactions])
+  const handleView = (transaction: Transaction) => {
+    setSelectedTransaction(transaction)
+    setIsDetailsModalOpen(true)
+  }
+
+  const handleEdit = (transaction: Transaction) => {
+    setSelectedTransaction(transaction)
+    setIsEditModalOpen(true)
+  }
+
+  const handleDelete = (transaction: Transaction) => {
+    setSelectedTransaction(transaction)
+    setIsDeleteModalOpen(true)
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value))
+    setCurrentPage(1)
+  }
+
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentTransactions = transactions.slice(startIndex, endIndex)
+  const totalPages = Math.ceil(transactions.length / itemsPerPage)
 
   // Apply filters to the data
-  const applyFilters = (data: Tables<"transactions">[]) => {
+  const applyFilters = (data: Transaction[]) => {
     return data.filter((transaction) => {
       // Filter by payment mode
       if (activePaymentMethod !== "all") {
@@ -125,7 +173,7 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
 
   // Filter transactions based on search query and filters
   const filteredTransactions = applyFilters(
-    transactionsData.filter(
+    transactions.filter(
       (transaction) =>
         transaction.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (transaction.payment_mode && transaction.payment_mode.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -133,46 +181,35 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
     ),
   )
 
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredTransactions.length / Number.parseInt(itemsPerPage))
-  const startIndex = (currentPage - 1) * Number.parseInt(itemsPerPage)
-  const endIndex = startIndex + Number.parseInt(itemsPerPage)
-  const currentTransactions = filteredTransactions.slice(startIndex, endIndex)
-
-  // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [filters, searchQuery, itemsPerPage, activePaymentMethod])
-
   // Handle transaction actions
-  const handleViewDetails = (transaction: Tables<"transactions">) => {
+  const handleViewDetails = (transaction: Transaction) => {
     setSelectedTransaction(transaction)
-    setShowDetailsModal(true)
+    setIsDetailsModalOpen(true)
   }
 
-  const handleEditTransaction = (transaction: Tables<"transactions">) => {
+  const handleEditTransaction = (transaction: Transaction) => {
     setSelectedTransaction(transaction)
-    setShowEditModal(true)
+    setIsEditModalOpen(true)
   }
 
-  const handleDeleteTransaction = (id: string) => {
-    setTransactionToDelete(id)
-    setShowDeleteModal(true)
+  const handleDeleteTransaction = (transaction: Transaction) => {
+    setSelectedTransaction(transaction)
+    setIsDeleteModalOpen(true)
   }
 
   const handleConfirmDelete = async () => {
-    if (transactionToDelete) {
+    if (selectedTransaction) {
       setLoading(true)
       try {
         const supabase = createClient()
 
         // Delete the transaction from the database
-        const { error } = await supabase.from("transactions").delete().eq("id", transactionToDelete)
+        const { error } = await supabase.from("transactions").delete().eq("id", selectedTransaction.id)
 
         if (error) throw error
 
         // Update the local state
-        setTransactionsData((prev) => prev.filter((transaction) => transaction.id !== transactionToDelete))
+        setTransactions((prev) => prev.filter((transaction) => transaction.id !== selectedTransaction.id))
 
         toast({
           title: "Transaction deleted",
@@ -186,17 +223,17 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
         })
       } finally {
         setLoading(false)
-        setShowDeleteModal(false)
-        setTransactionToDelete(null)
+        setIsDeleteModalOpen(false)
+        setSelectedTransaction(null)
       }
     }
   }
 
   const handleAddTransaction = () => {
-    setShowAddModal(true)
+    setIsAddModalOpen(true)
   }
 
-  const handleSaveTransaction = async (newTransaction: Partial<Tables<"transactions">>) => {
+  const handleSaveTransaction = async (newTransaction: Partial<Transaction>) => {
     setLoading(true)
     try {
       const supabase = createClient()
@@ -214,7 +251,6 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
         .insert({
           user_id: user.id,
           name: newTransaction.name || "",
-          person: newTransaction.person || "",
           amount: newTransaction.amount || 0,
           transaction_type: newTransaction.transaction_type || "Paid",
           payment_mode: newTransaction.payment_mode || "Cash",
@@ -230,7 +266,7 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
 
       // Update the local state
       if (data && data.length > 0) {
-        setTransactionsData((prev) => [...prev, data[0]])
+        setTransactions((prev) => [...prev, data[0]])
       }
 
       toast({
@@ -245,11 +281,11 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
       })
     } finally {
       setLoading(false)
-      setShowAddModal(false)
+      setIsEditModalOpen(false)
     }
   }
 
-  const handleUpdateTransaction = async (updatedTransaction: Tables<"transactions">) => {
+  const handleUpdateTransaction = async (updatedTransaction: Transaction) => {
     setLoading(true)
     try {
       const supabase = createClient()
@@ -259,7 +295,6 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
         .from("transactions")
         .update({
           name: updatedTransaction.name,
-          person: updatedTransaction.person,
           amount: updatedTransaction.amount,
           transaction_type: updatedTransaction.transaction_type,
           payment_mode: updatedTransaction.payment_mode,
@@ -273,7 +308,7 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
       if (error) throw error
 
       // Update the local state
-      setTransactionsData((prev) =>
+      setTransactions((prev) =>
         prev.map((transaction) => (transaction.id === updatedTransaction.id ? updatedTransaction : transaction)),
       )
 
@@ -289,12 +324,12 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
       })
     } finally {
       setLoading(false)
-      setShowEditModal(false)
+      setIsEditModalOpen(false)
     }
   }
 
   // Handle filter changes
-  const handleFilterChange = (newFilters: FilterOptions) => {
+  const handleFilterChange = (newFilters: TransactionFilters) => {
     setFilters(newFilters)
   }
 
@@ -425,10 +460,10 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
             <thead>
               <tr className="border-b text-left text-sm font-medium text-gray-500">
                 <th className="px-4 py-3">Transaction Name</th>
-                <th className="px-4 py-3">Person/Party</th>
-                <th className="px-4 py-3">Payment Mode</th>
                 <th className="px-4 py-3">Amount</th>
                 <th className="px-4 py-3">Transaction Type</th>
+                <th className="px-4 py-3">Payment Mode</th>
+                <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Action</th>
               </tr>
             </thead>
@@ -437,8 +472,6 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
                 currentTransactions.map((transaction) => (
                   <tr key={transaction.id} className="border-b text-sm hover:bg-gray-50">
                     <td className="px-4 py-3">{transaction.name}</td>
-                    <td className="px-4 py-3">{transaction.person || "N/A"}</td>
-                    <td className="px-4 py-3">{transaction.payment_mode || "N/A"}</td>
                     <td className="px-4 py-3">₹{Number(transaction.amount).toLocaleString()}</td>
                     <td className="px-4 py-3">
                       <span
@@ -451,6 +484,8 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
                         {transaction.transaction_type}
                       </span>
                     </td>
+                    <td className="px-4 py-3">{transaction.payment_mode || "N/A"}</td>
+                    <td className="px-4 py-3">{format(parseISO(transaction.date), "MMM d, yyyy")}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Button
@@ -462,7 +497,7 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
                           <FileText className="h-4 w-4" />
                           <span className="sr-only">View Details</span>
                         </Button>
-                        {currentRole?.name !== "nominee" && (
+                        {currentRole !== "nominee" && (
                           <>
                             <Button
                               variant="ghost"
@@ -477,7 +512,7 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-red-500"
-                              onClick={() => handleDeleteTransaction(transaction.id)}
+                              onClick={() => handleDeleteTransaction(transaction)}
                             >
                               <Trash2 className="h-4 w-4" />
                               <span className="sr-only">Delete</span>
@@ -505,7 +540,7 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
               Showing {startIndex + 1} to {Math.min(endIndex, filteredTransactions.length)} of{" "}
               {filteredTransactions.length} entries
             </p>
-            <Select value={itemsPerPage} onValueChange={setItemsPerPage}>
+            <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
               <SelectTrigger className="h-8 w-[70px]">
                 <SelectValue placeholder="10" />
               </SelectTrigger>
@@ -555,8 +590,8 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
 
       {/* Add Transaction Modal */}
       <AddTransactionModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
         onSave={handleSaveTransaction}
       />
 
@@ -564,16 +599,16 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
       {selectedTransaction && (
         <EditTransactionModal
           transaction={selectedTransaction}
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
           onSave={handleUpdateTransaction}
         />
       )}
 
       {/* Delete Transaction Modal */}
       <DeleteTransactionModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
       />
 
@@ -581,8 +616,8 @@ export function TransactionsTable({ transactions, currentRole }: TransactionsTab
       {selectedTransaction && (
         <TransactionDetailsModal
           transaction={selectedTransaction}
-          isOpen={showDetailsModal}
-          onClose={() => setShowDetailsModal(false)}
+          isOpen={isDetailsModalOpen}
+          onClose={() => setIsDetailsModalOpen(false)}
         />
       )}
     </>

@@ -15,7 +15,7 @@ export default async function Page({ params, searchParams }: PageProps) {
   await searchParams // We need to await this even if we don't use it
 
   const cookieStore = await cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createServerClient()
 
   const {
     data: { user },

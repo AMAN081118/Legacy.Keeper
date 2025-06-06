@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { getNomineeDetails } from "../actions/nominee-onboarding"
 import { Button } from "@/components/ui/button"
-import { DotGlobe } from "@/components/dot-globe"
 import Image from "next/image"
 
 interface NomineeDetails {
@@ -12,7 +11,7 @@ interface NomineeDetails {
   name: string
   inviterName: string
   inviterEmail: string
-  inviterProfileUrl?: string
+  inviterProfileUrl?: string | null
 }
 
 export default function NomineeOnboarding() {
@@ -33,9 +32,9 @@ export default function NomineeOnboarding() {
 
     async function loadNomineeDetails() {
       try {
-        const details = await getNomineeDetails(token)
-        if (details.success) {
-          setNomineeDetails(details.data)
+        const details = await getNomineeDetails(token as string)
+        if (details.success && details.data) {
+          setNomineeDetails(details.data as NomineeDetails)
         } else {
           setError(details.error || "Failed to load nominee details")
         }
@@ -86,9 +85,9 @@ export default function NomineeOnboarding() {
             <h1 className="text-2xl font-bold">Trustee Hub</h1>
           </div>
         </div>
-        <div className="flex-grow flex items-center justify-center">
+        {/* <div className="flex-grow flex items-center justify-center">
           <DotGlobe className="w-full h-64 md:h-96" />
-        </div>
+        </div> */}
       </div>
 
       {/* Right side with content */}

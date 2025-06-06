@@ -11,28 +11,33 @@ interface TransactionsTabsProps {
 }
 
 export function TransactionsTabs({ transactionsData }: TransactionsTabsProps) {
-  const { currentRole } = useRole();
+  const { currentRole } = useRole()
   const [activeTab, setActiveTab] = useState("all")
-
-  const allTransactions = transactionsData
-  const paidTransactions = transactionsData.filter((transaction) => transaction.transaction_type === "Paid")
-  const receivedTransactions = transactionsData.filter((transaction) => transaction.transaction_type === "Received")
 
   return (
     <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="all">Both Transactions ({allTransactions.length})</TabsTrigger>
-        <TabsTrigger value="paid">Paid Transactions ({paidTransactions.length})</TabsTrigger>
-        <TabsTrigger value="received">Received Transactions ({receivedTransactions.length})</TabsTrigger>
+        <TabsTrigger value="all">All Transactions</TabsTrigger>
+        <TabsTrigger value="paid">Paid</TabsTrigger>
+        <TabsTrigger value="received">Received</TabsTrigger>
       </TabsList>
       <TabsContent value="all">
-        <TransactionsTable transactions={allTransactions} currentRole={currentRole} />
+        <TransactionsTable 
+          transactions={transactionsData} 
+          currentRole={currentRole?.name || "user"} 
+        />
       </TabsContent>
       <TabsContent value="paid">
-        <TransactionsTable transactions={paidTransactions} currentRole={currentRole} />
+        <TransactionsTable 
+          transactions={transactionsData.filter(t => t.transaction_type === "Paid")} 
+          currentRole={currentRole?.name || "user"} 
+        />
       </TabsContent>
       <TabsContent value="received">
-        <TransactionsTable transactions={receivedTransactions} currentRole={currentRole} />
+        <TransactionsTable 
+          transactions={transactionsData.filter(t => t.transaction_type === "Received")} 
+          currentRole={currentRole?.name || "user"} 
+        />
       </TabsContent>
     </Tabs>
   )

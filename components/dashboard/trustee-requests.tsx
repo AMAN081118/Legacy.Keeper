@@ -85,7 +85,7 @@ export default function TrusteeRequests() {
   }, [])
 
   useEffect(() => {
-    if (currentRole?.name !== "trustee" || !currentRole.relatedUser?.email) return
+    if (!currentRole || currentRole.name !== "trustee" || !currentRole.relatedUser?.email) return
     setLoading(true)
     setError(null)
     fetch(`/api/trustee-nominee-requests?userEmail=${encodeURIComponent(currentRole.relatedUser.email)}`)
@@ -102,7 +102,7 @@ export default function TrusteeRequests() {
       // Get current user's email
       const { data: userData } = await supabase.auth.getUser()
       const trusteeEmail = userData?.user?.email
-      if (!trusteeEmail || !currentRole.relatedUser?.email) return
+      if (!trusteeEmail || !currentRole?.relatedUser?.email) return
       // Find the trustee record where email = current user's email and user_id = inviter's id
       // First, get inviter's user id
       const { data: inviter } = await supabase.from("users").select("id").eq("email", currentRole.relatedUser.email).single()
@@ -115,7 +115,7 @@ export default function TrusteeRequests() {
 
   // Add a function to refresh nominees
   const refreshNominees = async () => {
-    if (currentRole?.name !== "trustee" || !currentRole.relatedUser?.email) return;
+    if (!currentRole || currentRole.name !== "trustee" || !currentRole.relatedUser?.email) return;
     setLoading(true);
     setError(null);
     fetch(`/api/trustee-nominee-requests?userEmail=${encodeURIComponent(currentRole.relatedUser.email)}`)
@@ -127,7 +127,7 @@ export default function TrusteeRequests() {
       .finally(() => setLoading(false));
   };
 
-  if (currentRole?.name !== "trustee") return null
+  if (!currentRole || currentRole.name !== "trustee") return null
   if (loading) return <div>Loading...</div>
   if (error) return <div>{error}</div>
 

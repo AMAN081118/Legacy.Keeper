@@ -40,13 +40,19 @@ export async function getReminders() {
 
     if (error) {
       console.error("Error fetching reminders:", error)
-      return { error: error.message, reminders: [] }
+      return { 
+        error: error instanceof Error ? error.message : 'An unknown error occurred', 
+        reminders: [] 
+      }
     }
 
     return { reminders, error: null }
   } catch (error) {
     console.error("Error fetching reminders:", error)
-    return { error: error.message, reminders: [] }
+    return { 
+      error: error instanceof Error ? error.message : 'An unknown error occurred', 
+      reminders: [] 
+    }
   }
 }
 
@@ -109,15 +115,21 @@ export async function addReminder(formData: FormData) {
 
     if (error) {
       console.error("Error adding reminder:", error)
-      return { error: error.message, success: false }
+      return { 
+        error: error instanceof Error ? error.message : 'An unknown error occurred', 
+        success: false 
+      }
     }
 
     revalidatePath("/dashboard/reminders")
     revalidatePath("/dashboard")
     return { success: true, error: null }
   } catch (error) {
-    console.error("Error adding reminder:", error)
-    return { error: error.message, success: false }
+    console.error("Error creating reminder:", error)
+    return { 
+      error: error instanceof Error ? error.message : 'An unknown error occurred', 
+      success: false 
+    }
   }
 }
 
@@ -184,7 +196,10 @@ export async function updateReminder(formData: FormData) {
 
     if (error) {
       console.error("Error updating reminder:", error)
-      return { error: error.message, success: false }
+      return { 
+        error: error instanceof Error ? error.message : 'An unknown error occurred', 
+        success: false 
+      }
     }
 
     revalidatePath("/dashboard/reminders")
@@ -192,7 +207,10 @@ export async function updateReminder(formData: FormData) {
     return { success: true, error: null }
   } catch (error) {
     console.error("Error updating reminder:", error)
-    return { error: error.message, success: false }
+    return { 
+      error: error instanceof Error ? error.message : 'An unknown error occurred', 
+      success: false 
+    }
   }
 }
 
@@ -211,7 +229,10 @@ export async function deleteReminder(id: string) {
 
     if (error) {
       console.error("Error deleting reminder:", error)
-      return { error: error.message, success: false }
+      return { 
+        error: error instanceof Error ? error.message : 'An unknown error occurred', 
+        success: false 
+      }
     }
 
     revalidatePath("/dashboard/reminders")
@@ -219,6 +240,9 @@ export async function deleteReminder(id: string) {
     return { success: true, error: null }
   } catch (error) {
     console.error("Error deleting reminder:", error)
-    return { error: error.message, success: false }
+    return { 
+      error: error instanceof Error ? error.message : 'An unknown error occurred', 
+      success: false 
+    }
   }
 }

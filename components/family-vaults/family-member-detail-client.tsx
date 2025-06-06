@@ -27,6 +27,8 @@ export function FamilyMemberDetailClient({ member, documents: initialDocuments }
   const [isDeleteDocModalOpen, setIsDeleteDocModalOpen] = useState(false)
   const [isViewDocModalOpen, setIsViewDocModalOpen] = useState(false)
   const [viewingDocument, setViewingDocument] = useState<FamilyDocument | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isDeleteDocumentModalOpen, setIsDeleteDocumentModalOpen] = useState(false)
 
   // Format date for display
   const formatDate = (dateString: string | null) => {
@@ -268,7 +270,8 @@ export function FamilyMemberDetailClient({ member, documents: initialDocuments }
       <DeleteMemberModal
         isOpen={isDeleteMemberModalOpen}
         onClose={() => setIsDeleteMemberModalOpen(false)}
-        member={member}
+        memberId={member.id}
+        memberName={member.member_name || "this member"}
       />
 
       {selectedDocument && (
@@ -289,11 +292,27 @@ export function FamilyMemberDetailClient({ member, documents: initialDocuments }
               setIsDeleteDocModalOpen(false)
               setSelectedDocument(null)
             }}
-            document={selectedDocument}
+            documentId={selectedDocument.id}
+            documentTitle={selectedDocument.document_title || "this document"}
             familyMemberId={member.id}
           />
         </>
       )}
+
+      <DeleteMemberModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        memberId={member.id}
+        memberName={member.member_name || "this member"}
+      />
+
+      <DeleteDocumentModal
+        isOpen={isDeleteDocumentModalOpen}
+        onClose={() => setIsDeleteDocumentModalOpen(false)}
+        documentId={selectedDocument?.id || ""}
+        documentTitle={selectedDocument?.document_title || "this document"}
+        familyMemberId={member.id}
+      />
     </>
   )
 }

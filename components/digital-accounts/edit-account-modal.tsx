@@ -66,17 +66,21 @@ export function EditAccountModal({ isOpen, onClose, onSuccess, account, userId }
 
     setIsSubmitting(true)
     try {
-      const result = await updateDigitalAccount({
-        id: account.id,
-        userId,
-        accountName,
-        accountIdNo,
-        passwordPhone,
-        loginContact,
-        description,
-        governmentIdUrl,
-        date: date ? date.toISOString() : new Date().toISOString(),
-      })
+      const formData = new FormData()
+      formData.append('name', accountName)
+      formData.append('type', 'digital')
+      formData.append('account_id', accountIdNo)
+      formData.append('password', passwordPhone)
+      formData.append('contact_info', loginContact)
+      formData.append('description', description || '')
+      formData.append('government_id_url', governmentIdUrl || '')
+      if (date) {
+        formData.append('date', date.toISOString())
+      }
+      formData.append('user_id', userId)
+      formData.append('id', account.id)
+
+      const result = await updateDigitalAccount(formData)
 
       if (result.success) {
         onSuccess()

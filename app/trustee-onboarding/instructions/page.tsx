@@ -2,8 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { DotGlobe } from "@/components/dot-globe"
 import Image from "next/image"
+import { Suspense } from "react"
 
 const steps = [
   [
@@ -23,7 +23,7 @@ const steps = [
   ],
 ]
 
-export default function TrusteeInstructions() {
+function TrusteeInstructionsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const step = Number(searchParams.get("step") || 1)
@@ -54,9 +54,6 @@ export default function TrusteeInstructions() {
             </svg>
             <h1 className="text-2xl font-bold">Trustee Hub</h1>
           </div>
-        </div>
-        <div className="flex-grow flex items-center justify-center">
-          <DotGlobe className="w-full h-64 md:h-96" />
         </div>
       </div>
 
@@ -98,5 +95,13 @@ export default function TrusteeInstructions() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function TrusteeInstructions() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TrusteeInstructionsContent />
+    </Suspense>
   )
 } 

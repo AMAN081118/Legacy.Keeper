@@ -68,7 +68,7 @@ export default function DepositsInvestmentsClient({ initialDeposits, initialStat
     try {
       const [depositsResponse, statsResponse] = await Promise.all([
         getDepositsInvestments(userId),
-        getDepositsInvestmentsStats(userId),
+        getDepositsInvestmentsStats(),
       ]);
 
       if (depositsResponse.success && depositsResponse.data) {

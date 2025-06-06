@@ -36,33 +36,33 @@ async function ensureServerBucketExists(bucketName: string): Promise<boolean> {
 
     // Set up RLS policies for the bucket
     try {
-      await adminClient.query(`
-        CREATE POLICY IF NOT EXISTS "Users can view their own documents"
-        ON storage.objects
-        FOR SELECT
-        USING (bucket_id = '${bucketName}' AND auth.uid()::text = (storage.foldername(name))[1]);
-      `)
+      await adminClient.rpc('create_policy', {
+        policy_name: 'Users can view their own documents',
+        table_name: 'storage.objects',
+        operation: 'SELECT',
+        using_expression: `bucket_id = '${bucketName}' AND auth.uid()::text = (storage.foldername(name))[1]`
+      })
 
-      await adminClient.query(`
-        CREATE POLICY IF NOT EXISTS "Users can upload their own documents"
-        ON storage.objects
-        FOR INSERT
-        WITH CHECK (bucket_id = '${bucketName}' AND auth.uid()::text = (storage.foldername(name))[1]);
-      `)
+      await adminClient.rpc('create_policy', {
+        policy_name: 'Users can upload their own documents',
+        table_name: 'storage.objects',
+        operation: 'INSERT',
+        check_expression: `bucket_id = '${bucketName}' AND auth.uid()::text = (storage.foldername(name))[1]`
+      })
 
-      await adminClient.query(`
-        CREATE POLICY IF NOT EXISTS "Users can update their own documents"
-        ON storage.objects
-        FOR UPDATE
-        USING (bucket_id = '${bucketName}' AND auth.uid()::text = (storage.foldername(name))[1]);
-      `)
+      await adminClient.rpc('create_policy', {
+        policy_name: 'Users can update their own documents',
+        table_name: 'storage.objects',
+        operation: 'UPDATE',
+        using_expression: `bucket_id = '${bucketName}' AND auth.uid()::text = (storage.foldername(name))[1]`
+      })
 
-      await adminClient.query(`
-        CREATE POLICY IF NOT EXISTS "Users can delete their own documents"
-        ON storage.objects
-        FOR DELETE
-        USING (bucket_id = '${bucketName}' AND auth.uid()::text = (storage.foldername(name))[1]);
-      `)
+      await adminClient.rpc('create_policy', {
+        policy_name: 'Users can delete their own documents',
+        table_name: 'storage.objects',
+        operation: 'DELETE',
+        using_expression: `bucket_id = '${bucketName}' AND auth.uid()::text = (storage.foldername(name))[1]`
+      })
     } catch (policyError) {
       console.error("Error setting up bucket policies:", policyError)
       // Continue even if policy setup fails

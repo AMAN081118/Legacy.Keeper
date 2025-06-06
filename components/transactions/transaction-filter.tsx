@@ -8,123 +8,120 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
+import { Label } from "@/components/ui/label"
 
 interface TransactionFilterProps {
   filters: {
     paymentMode: string
-    dateRange?: {
+    dateRange: {
       from: Date | undefined
       to: Date | undefined
     }
   }
-  onFilterChange: (filters: any) => void
+  onFilterChange: (filters: {
+    paymentMode: string
+    dateRange: {
+      from: Date | undefined
+      to: Date | undefined
+    }
+  }) => void
   onClose: () => void
 }
 
 export function TransactionFilter({ filters, onFilterChange, onClose }: TransactionFilterProps) {
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined
-    to: Date | undefined
-  }>({
-    from: filters.dateRange?.from,
-    to: filters.dateRange?.to,
-  })
+  const [localFilters, setLocalFilters] = useState(filters)
 
-  const [paymentMode, setPaymentMode] = useState(filters.paymentMode)
-
-  useEffect(() => {
-    onFilterChange({
-      ...filters,
-      paymentMode,
-      dateRange,
-    })
-  }, [paymentMode, dateRange])
-
-  const handleReset = () => {
-    setDateRange({ from: undefined, to: undefined })
-    setPaymentMode("all")
+  const handleChange = (key: keyof typeof filters, value: any) => {
+    const newFilters = { ...localFilters, [key]: value }
+    setLocalFilters(newFilters)
+    onFilterChange(newFilters)
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="space-y-2">
-        <h3 className="font-medium">Payment Mode</h3>
-        <Select value={paymentMode} onValueChange={setPaymentMode}>
+    <div className="space-y-4 p-4">
+      <div>
+        <Label>Payment Mode</Label>
+        <Select
+          value={localFilters.paymentMode}
+          onValueChange={(value) => handleChange("paymentMode", value)}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select payment mode" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
             <SelectItem value="cash">Cash</SelectItem>
-            <SelectItem value="online">Online</SelectItem>
-            <SelectItem value="card">Cards</SelectItem>
-            <SelectItem value="app">Payment Apps</SelectItem>
-            <SelectItem value="asset">Asset Based</SelectItem>
-            <SelectItem value="other">Others</SelectItem>
+            <SelectItem value="card">Card</SelectItem>
+            <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+            <SelectItem value="upi">UPI</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <h3 className="font-medium">Date Range</h3>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">From</p>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !dateRange.from && "text-muted-foreground",
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange.from ? format(dateRange.from, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={dateRange.from}
-                  onSelect={(date) => setDateRange({ ...dateRange, from: date })}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">To</p>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn("w-full justify-start text-left font-normal", !dateRange.to && "text-muted-foreground")}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange.to ? format(dateRange.to, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={dateRange.to}
-                  onSelect={(date) => setDateRange({ ...dateRange, to: date })}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+      <div>
+        <Label>Date Range</Label>
+        <div className="grid gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !localFilters.dateRange.from && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {localFilters.dateRange.from ? (
+                  format(localFilters.dateRange.from, "PPP")
+                ) : (
+                  <span>Pick a date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={localFilters.dateRange.from}
+                onSelect={(date) => handleChange("dateRange", { ...localFilters.dateRange, from: date })}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !localFilters.dateRange.to && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {localFilters.dateRange.to ? (
+                  format(localFilters.dateRange.to, "PPP")
+                ) : (
+                  <span>Pick a date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={localFilters.dateRange.to}
+                onSelect={(date) => handleChange("dateRange", { ...localFilters.dateRange, to: date })}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
-      <div className="flex justify-between pt-4 border-t">
-        <Button variant="outline" size="sm" onClick={handleReset}>
-          Reset
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={onClose}>
+          Cancel
         </Button>
-        <Button size="sm" onClick={onClose}>
-          Apply Filters
-        </Button>
+        <Button onClick={onClose}>Apply Filters</Button>
       </div>
     </div>
   )

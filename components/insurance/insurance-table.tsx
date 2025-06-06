@@ -89,9 +89,22 @@ export function InsuranceTable({
                     <td className="px-4 py-3 text-sm">{new Date(insurance.date).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-sm">
                       <InsuranceDetailsModal insurance={insurance}>
-                        <span className="cursor-pointer hover:text-blue-600">
-                          {insurance.description || "For any emergency situation"}
-                        </span>
+                        <div className="space-y-4">
+                          <div>
+                            <h3 className="text-lg font-semibold">{insurance.name}</h3>
+                            <p className="text-sm text-muted-foreground">{insurance.description}</p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm font-medium">Type</p>
+                              <p className="text-sm">{insurance.insurance_type}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">Amount</p>
+                              <p className="text-sm">₹{insurance.amount.toLocaleString()}</p>
+                            </div>
+                          </div>
+                        </div>
                       </InsuranceDetailsModal>
                     </td>
                     <td className="px-4 py-3 text-sm">{insurance.insurance_type}</td>
@@ -99,20 +112,25 @@ export function InsuranceTable({
                     <td className="px-4 py-3 text-sm">
                       <div className="flex space-x-2">
                         <InsuranceDetailsModal insurance={insurance}>
-                          <Button variant="ghost" size="icon">
-                            <FileText className="h-4 w-4" />
-                          </Button>
+                          <div className="space-y-4">
+                            <div>
+                              <h3 className="text-lg font-semibold">{insurance.name}</h3>
+                              <p className="text-sm text-muted-foreground">{insurance.description}</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-sm font-medium">Type</p>
+                                <p className="text-sm">{insurance.insurance_type}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium">Amount</p>
+                                <p className="text-sm">₹{insurance.amount.toLocaleString()}</p>
+                              </div>
+                            </div>
+                          </div>
                         </InsuranceDetailsModal>
-                        <EditInsuranceModal id={insurance.id}>
-                          <Button variant="ghost" size="icon">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </EditInsuranceModal>
-                        <DeleteInsuranceModal id={insurance.id}>
-                          <Button variant="ghost" size="icon">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </DeleteInsuranceModal>
+                        <EditInsuranceModal id={insurance.id} />
+                        <DeleteInsuranceModal id={insurance.id} />
                       </div>
                     </td>
                   </tr>

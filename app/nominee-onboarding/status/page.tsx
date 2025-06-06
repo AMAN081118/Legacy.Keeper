@@ -1,7 +1,6 @@
 "use client"
 
 import { useSearchParams, useRouter } from "next/navigation"
-import { DotGlobe } from "@/components/dot-globe"
 import { Button } from "@/components/ui/button"
 
 export default function NomineeStatusPage() {
@@ -21,9 +20,9 @@ export default function NomineeStatusPage() {
     <div className="flex min-h-screen bg-white">
       {/* Left side with globe */}
       <div className="hidden md:flex md:w-2/5 bg-gradient-to-br from-blue-900 to-blue-700 relative overflow-hidden">
-        <div className="absolute inset-0">
+        {/* <div className="absolute inset-0">
           <DotGlobe />
-        </div>
+        </div> */}
         <div className="absolute top-8 left-8 flex items-center">
           <div className="text-white text-2xl font-bold flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 mr-2">

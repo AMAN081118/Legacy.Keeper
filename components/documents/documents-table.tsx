@@ -5,14 +5,7 @@ import type { Document } from "@/lib/supabase/database.types"
 import { Eye, Pencil, Trash2, Download } from "lucide-react"
 import { EmptyState } from "./empty-state"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
+import { Pagination } from "@/components/ui/pagination"
 import { useState } from "react"
 
 interface DocumentsTableProps {
@@ -64,6 +57,10 @@ export function DocumentsTable({ documents, onEdit, onDelete, onView }: Document
   const totalPages = Math.ceil(documents.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedDocuments = documents.slice(startIndex, startIndex + itemsPerPage)
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage)
+  }
 
   return (
     <div className="rounded-lg border bg-white">
@@ -122,31 +119,11 @@ export function DocumentsTable({ documents, onEdit, onDelete, onView }: Document
           <div className="text-sm text-gray-500">
             {startIndex + 1}-{Math.min(startIndex + itemsPerPage, documents.length)} of {documents.length} items
           </div>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-
-              {Array.from({ length: totalPages }).map((_, i) => (
-                <PaginationItem key={i}>
-                  <PaginationLink onClick={() => setCurrentPage(i + 1)} isActive={currentPage === i + 1}>
-                    {i + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         </div>
       )}
     </div>

@@ -8,24 +8,27 @@ import { getCurrentRoleFromSession } from "@/app/actions/user-roles"
 import { redirect } from "next/navigation"
 import { createServerClient } from "@/lib/supabase/server"
 
-export default async function InsurancePage({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined }
-}) {
+interface PageProps {
+  params: Promise<{ [key: string]: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default async function Page({ searchParams }: PageProps) {
   const cookieStore = await cookies()
   const supabase = createServerClient()
   let currentRole = null
   let userId = null
   let session = null
   try {
-    currentRole = await getCurrentRoleFromSession(cookieStore)
+    currentRole = await getCurrentRoleFromSession()
     const sessionResult = await supabase.auth.getSession()
     session = sessionResult.data.session
     if (session) {
       userId = session.user.id
     }
-  } catch {}
+  } catch (error) {
+    console.error("Error getting current role:", error)
+  }
 
   // --- GUARD: Only allow access if user is not nominee, or nominee with 'Family' access ---
   if (

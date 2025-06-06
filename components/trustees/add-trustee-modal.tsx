@@ -21,6 +21,7 @@ interface Trustee {
   profile_photo_url?: string
   government_id_url?: string
   approval_type: string
+  status: string
   created_at: string
   updated_at: string
 }

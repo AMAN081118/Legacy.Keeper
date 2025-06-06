@@ -24,14 +24,22 @@ export async function GET() {
 
     // Get users table data for related users
     const relatedUserIds = userRoles?.map(ur => ur.related_user_id).filter(Boolean) || []
-    let relatedUsers = []
+    let relatedUsers: { id: string; email: string; role: string }[] = []
     if (relatedUserIds.length > 0) {
       const { data: relatedUsersData, error: relatedUsersError } = await supabase
-        .from('users')
+        .from('user_roles')
         .select('id, name, email')
-        .in('id', relatedUserIds)
-      
-      relatedUsers = relatedUsersData || []
+        .eq('user_id', user.id)
+
+      if (relatedUsersError) {
+        return NextResponse.json({ error: relatedUsersError.message }, { status: 500 })
+      }
+
+      relatedUsers = (relatedUsersData || []).map(user => ({
+        id: user.id,
+        email: user.email,
+        role: user.name // Using name as role since that's what we selected
+      }))
     }
 
     // Get trustees where user is the trustee

@@ -6,6 +6,11 @@ export interface GuideItem {
   category: string
   readTime: string
   slug: string
+  content: string
+  date: string
+  image: string
+  author: string
+  tags: string[]
 }
 
 export const guidesData: GuideItem[] = [
@@ -18,6 +23,11 @@ export const guidesData: GuideItem[] = [
     category: "Family Planning",
     readTime: "8 min read",
     slug: "end-of-life-conversations",
+    content: "Full guide content here...",
+    date: "2024-03-20",
+    image: "/placeholder-guide.jpg",
+    author: "Legacy Keeper Team",
+    tags: ["family", "planning", "conversations"]
   },
   {
     id: 2,
@@ -28,6 +38,11 @@ export const guidesData: GuideItem[] = [
     category: "Retirement Planning",
     readTime: "12 min read",
     slug: "retirement-management",
+    content: "Full guide content here...",
+    date: "2024-03-20",
+    image: "/placeholder-guide.jpg",
+    author: "Legacy Keeper Team",
+    tags: ["retirement", "planning", "management"]
   },
   {
     id: 3,
@@ -38,6 +53,11 @@ export const guidesData: GuideItem[] = [
     category: "Ethical Investing",
     readTime: "10 min read",
     slug: "sustainable-ethical-growth",
+    content: "Full guide content here...",
+    date: "2024-03-20",
+    image: "/placeholder-guide.jpg",
+    author: "Legacy Keeper Team",
+    tags: ["ethical", "investing", "sustainable"]
   },
   {
     id: 4,
@@ -48,6 +68,11 @@ export const guidesData: GuideItem[] = [
     category: "Business Finance",
     readTime: "15 min read",
     slug: "revenue-management-strategies",
+    content: "Full guide content here...",
+    date: "2024-03-20",
+    image: "/placeholder-guide.jpg",
+    author: "Legacy Keeper Team",
+    tags: ["business", "finance", "revenue"]
   },
   {
     id: 5,
@@ -58,6 +83,11 @@ export const guidesData: GuideItem[] = [
     category: "Business Models",
     readTime: "9 min read",
     slug: "subscription-billing",
+    content: "Full guide content here...",
+    date: "2024-03-20",
+    image: "/placeholder-guide.jpg",
+    author: "Legacy Keeper Team",
+    tags: ["business", "models", "subscription"]
   },
   {
     id: 6,
@@ -68,6 +98,11 @@ export const guidesData: GuideItem[] = [
     category: "Technology",
     readTime: "11 min read",
     slug: "ai-business-insights",
+    content: "Full guide content here...",
+    date: "2024-03-20",
+    image: "/placeholder-guide.jpg",
+    author: "Legacy Keeper Team",
+    tags: ["technology", "ai", "business"]
   },
   {
     id: 7,
@@ -78,6 +113,11 @@ export const guidesData: GuideItem[] = [
     category: "Personal Finance",
     readTime: "14 min read",
     slug: "ultimate-savings-techniques",
+    content: "Full guide content here...",
+    date: "2024-03-20",
+    image: "/placeholder-guide.jpg",
+    author: "Legacy Keeper Team",
+    tags: ["personal", "finance", "savings"]
   },
   {
     id: 8,
@@ -88,6 +128,11 @@ export const guidesData: GuideItem[] = [
     category: "Sales Strategy",
     readTime: "7 min read",
     slug: "effective-customer-questions",
+    content: "Full guide content here...",
+    date: "2024-03-20",
+    image: "/placeholder-guide.jpg",
+    author: "Legacy Keeper Team",
+    tags: ["sales", "strategy", "customer"]
   },
   {
     id: 9,
@@ -98,5 +143,10 @@ export const guidesData: GuideItem[] = [
     category: "Small Business",
     readTime: "10 min read",
     slug: "revenue-receivables-small-business",
+    content: "Full guide content here...",
+    date: "2024-03-20",
+    image: "/placeholder-guide.jpg",
+    author: "Legacy Keeper Team",
+    tags: ["small", "business", "receivables"]
   },
 ]

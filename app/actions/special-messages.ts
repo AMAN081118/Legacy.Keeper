@@ -56,7 +56,7 @@ export async function getSpecialMessages() {
 
     // Attach sender and recipient details to each message
     const messagesWithUsers = messages.map((message: any) => {
-      let recipients = []
+      let recipients: { id: string; email: string }[] = []
       if (message.is_for_all) {
         recipients = allUsers
       } else if (Array.isArray(message.recipient_ids)) {

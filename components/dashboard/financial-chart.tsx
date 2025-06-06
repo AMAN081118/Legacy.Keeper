@@ -83,15 +83,10 @@ export function FinancialChart({ transactionsData }: FinancialChartProps) {
         .filter((t) => t.transaction_type === "Paid")
         .reduce((sum, t) => sum + Number(t.amount), 0)
 
-      const investments = periodTransactions
-        .filter((t) => t.transaction_type === "Investment")
-        .reduce((sum, t) => sum + Number(t.amount), 0)
-
       return {
         name: period.name,
         Received: income,
         Paid: expenses,
-        Investment: investments,
       }
     })
 
@@ -111,10 +106,6 @@ export function FinancialChart({ transactionsData }: FinancialChartProps) {
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-full bg-red-500"></span>
             <span className="text-sm font-medium">Paid</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full bg-blue-500"></span>
-            <span className="text-sm font-medium">Investment</span>
           </div>
         </div>
         <Select value={timeframe} onValueChange={setTimeframe}>
@@ -157,7 +148,6 @@ export function FinancialChart({ transactionsData }: FinancialChartProps) {
             <Tooltip content={<CustomTooltip />} />
             <Line type="monotone" dataKey="Received" stroke="#22c55e" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
             <Line type="monotone" dataKey="Paid" stroke="#ef4444" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
-            <Line type="monotone" dataKey="Investment" stroke="#3b82f6" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>

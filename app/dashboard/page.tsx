@@ -23,9 +23,9 @@ async function DashboardData({ userId }: { userId: string }) {
     // Get current role from session
     let currentRole = null;
     try {
-      currentRole = await getCurrentRoleFromSession(cookieStore);
-    } catch (err) {
-      debugInfo += `Error getting currentRole: ${err}\n`;
+      currentRole = await getCurrentRoleFromSession();
+    } catch (error) {
+      console.error("Error getting current role:", error);
     }
 
     debugInfo += `CurrentRole: ${JSON.stringify(currentRole)}\n`;

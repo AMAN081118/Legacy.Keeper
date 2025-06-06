@@ -100,3 +100,7 @@ export const blogPosts: BlogPost[] = [
     layout: "featured",
   },
 ]
+
+export function getBlogPost(id: number) {
+  return blogPosts.find((post) => post.id === id)
+}

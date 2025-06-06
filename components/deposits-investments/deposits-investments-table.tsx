@@ -10,15 +10,7 @@ import { AddDepositInvestmentModal } from "./add-deposit-investment-modal"
 import { EditDepositInvestmentModal } from "./edit-deposit-investment-modal"
 import { DeleteDepositInvestmentModal } from "./delete-deposit-investment-modal"
 import { DepositInvestmentDetailsModal } from "./deposit-investment-details-modal"
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationEllipsis,
-  PaginationPrevious,
-  PaginationNext,
-} from "@/components/ui/pagination"
+import { Pagination } from "@/components/ui/pagination"
 import { useRole } from "@/components/dashboard/role-context"
 
 interface DepositsInvestmentsTableProps {
@@ -189,37 +181,11 @@ export function DepositsInvestmentsTable({ depositsInvestments, loading, onRefre
           </div>
         </div>
 
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((page) => Math.abs(page - currentPage) < 2 || page === 1 || page === totalPages)
-              .map((page) => (
-                <PaginationItem key={page}>
-                  <PaginationLink isActive={page === currentPage} onClick={() => handlePageChange(page)}>
-                    {page}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
-            </PaginationItem>
-            <PaginationItem>
-              <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
       </div>
 
       {/* Modals */}

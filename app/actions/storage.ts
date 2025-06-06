@@ -31,13 +31,11 @@ export async function setupStorage() {
 
       // Try to set bucket policies to allow public access
       try {
-        await supabase.storage.from(bucketName).createPolicy({
-          name: "Public Read Access",
-          definition: {
-            type: "READ",
-            permissions: ["SELECT"],
-            condition: "TRUE",
-          },
+        await supabase.rpc('create_policy', {
+          policy_name: 'Users can access their own files',
+          table_name: 'storage.objects',
+          operation: 'SELECT',
+          using_expression: `bucket_id = '${bucketName}' AND auth.uid()::text = (storage.foldername(name))[1]`
         })
       } catch (policyError) {
         console.error("Error setting bucket policy:", policyError)

@@ -40,7 +40,7 @@ export default function PermissionRequiredClient({ missingSections, nomineeEmail
         toast({
           title: "Request Sent",
           description: "Your access request has been sent to your trustee.",
-          variant: "success",
+          variant: "default",
         });
       } else {
         toast({

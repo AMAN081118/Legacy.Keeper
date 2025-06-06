@@ -7,7 +7,7 @@ import { getCurrentRoleFromSession } from "@/app/actions/user-roles"
 
 export default async function FamilyVaultsPage() {
   const cookieStore = await cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createServerClient()
 
   const {
     data: { user },
@@ -19,8 +19,10 @@ export default async function FamilyVaultsPage() {
   // Get current role from session (if available)
   let currentRole = null
   try {
-    currentRole = await getCurrentRoleFromSession(cookieStore)
-  } catch {}
+    currentRole = await getCurrentRoleFromSession()
+  } catch (error) {
+    console.error("Error getting current role:", error)
+  }
 
   // --- GUARD: Only allow access if user is not nominee, or nominee with 'Family' access ---
   if (

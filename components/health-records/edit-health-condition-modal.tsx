@@ -128,7 +128,11 @@ export function EditHealthConditionModal({ condition, trigger }: EditHealthCondi
           </div>
           <div className="space-y-2">
             <Label>Attachment</Label>
-            <FileUpload endpoint="healthConditionAttachment" value={attachmentUrl} onChange={setAttachmentUrl} />
+            <FileUpload
+              bucket="health-records"
+              accept="image/*,.pdf"
+              onUploadComplete={(url) => setAttachmentUrl(url)}
+            />
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>

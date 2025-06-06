@@ -16,17 +16,17 @@ export async function POST(request: Request) {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Get the user by email
-    const { data: userData, error: userError } = await supabase.auth.admin.listUsers({
-      filter: {
-        email: email,
-      },
-    })
+    const { data: users, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email)
+      .limit(1)
 
-    if (userError || !userData.users.length) {
+    if (error || !users.length) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    const user = userData.users[0]
+    const user = users[0]
 
     // Update the user to confirm their email
     const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {

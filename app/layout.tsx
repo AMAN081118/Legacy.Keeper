@@ -6,6 +6,9 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { LoadingProvider } from "@/components/providers/loading-provider"
 // Import the Toaster component
 import { Toaster } from "@/components/ui/toaster"
+import { Navbar } from "@/components/landing/navbar"
+import { NavbarSpacer } from "@/components/landing/navbar-spacer"
+import { Newsletter } from "@/components/landing/newsletter"
 
 const inter = Inter({
   subsets: ["latin"],
