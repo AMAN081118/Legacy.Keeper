@@ -1,7 +1,7 @@
-import { Newsletter } from "@/components/newsletter"
-import { Footer } from "@/components/footer"
-import { VideoLibraryHeader } from "@/components/video-library-header"
-import { VideoGrid } from "@/components/video-grid"
+import { Newsletter } from "@/components/landing/newsletter"
+import { Footer } from "@/components/landing/footer"
+import { VideoLibraryHeader } from "@/components/landing/video-library-header"
+import { VideoGrid } from "@/components/landing/video-grid"
 
 export const metadata = {
   title: "Video Library - Legacy Keeper",

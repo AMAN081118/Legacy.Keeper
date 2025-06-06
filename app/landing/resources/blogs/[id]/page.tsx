@@ -1,12 +1,12 @@
-import { Footer } from "@/components/footer"
-import { NewsletterSubscribe } from "@/components/newsletter-subscribe"
-import { BlogPost } from "@/components/blog-post"
-import { blogPosts } from "@/lib/blog-data"
+import { Footer } from "@/components/landing/footer"
+import { NewsletterSubscribe } from "@/components/landing/newsletter-subscribe"
+import { BlogPost } from "@/components/landing/blog-post"
+import { getBlogPost } from "@/lib/blog-data"
 import { notFound } from "next/navigation"
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const id = Number.parseInt(params.id)
-  const post = blogPosts.find((post) => post.id === id)
+  const post = getBlogPost(id)
 
   if (!post) {
     return {
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 
 export default function BlogPostPage({ params }: { params: { id: string } }) {
   const id = Number.parseInt(params.id)
-  const post = blogPosts.find((post) => post.id === id)
+  const post = getBlogPost(id)
 
   if (!post) {
     notFound()

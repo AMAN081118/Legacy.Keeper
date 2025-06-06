@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getAllFAQCategoriesWithQuestions, type FAQCategory } from "@/lib/api"
+import { getAllFAQCategoriesWithQuestions, type FAQCategory } from "@/lib/landing/api"
 
 // Define a type for the default FAQ categories
 type DefaultFAQCategory = {

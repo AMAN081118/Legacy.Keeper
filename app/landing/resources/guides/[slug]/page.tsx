@@ -1,7 +1,7 @@
-import { Footer } from "@/components/footer"
-import { Newsletter } from "@/components/newsletter"
-import { GuideDetail } from "@/components/guide-detail"
-import { guidesData } from "@/lib/guides-data"
+import { Footer } from "@/components/landing/footer"
+import { Newsletter } from "@/components/landing/newsletter"
+import { GuideDetail } from "@/components/landing/guide-detail"
+import { guidesData } from "@/lib/landing/guides-data"
 import { notFound } from "next/navigation"
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {

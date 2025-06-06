@@ -1,5 +1,5 @@
-import { ResourcesHero } from "@/components/resources-hero"
-import { ResourceCategories } from "@/components/resource-categories"
+import { ResourcesHero } from "@/components/landing/resources-hero"
+import { ResourceCategories } from "@/components/landing/resource-categories"
 
 export const metadata = {
   title: "Resources - Legacy Keeper",

@@ -1,7 +1,7 @@
-import { Footer } from "@/components/footer"
-import { BlogsHeader } from "@/components/blogs-header"
-import { BlogPosts } from "@/components/blog-posts"
-import { NewsletterSubscribe } from "@/components/newsletter-subscribe"
+import { Footer } from "@/components/landing/footer"
+import { BlogsHeader } from "@/components/landing/blogs-header"
+import { BlogPosts } from "@/components/landing/blog-posts"
+import { NewsletterSubscribe } from "@/components/landing/newsletter-subscribe"
 
 export const metadata = {
   title: "Blogs - Legacy Keeper",

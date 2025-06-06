@@ -5,14 +5,14 @@ import { createServerClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-interface FamilyMemberDetailPageProps {
-  params: {
-    id: string
-  }
+interface PageProps {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
-export default async function FamilyMemberDetailPage({ params }: FamilyMemberDetailPageProps) {
-  const { id } = params
+export default async function Page({ params, searchParams }: PageProps) {
+  const { id } = await params
+  await searchParams // We need to await this even if we don't use it
 
   const cookieStore = await cookies()
   const supabase = createServerClient(cookieStore)

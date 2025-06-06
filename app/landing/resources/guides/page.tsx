@@ -1,5 +1,5 @@
-import { GuidesHeader } from "@/components/guides-header"
-import { GuidesGrid } from "@/components/guides-grid"
+import { GuidesHeader } from "@/components/landing/guides-header"
+import { GuidesGrid } from "@/components/landing/guides-grid"
 
 export const metadata = {
   title: "Help Guides - Legacy Keeper",
