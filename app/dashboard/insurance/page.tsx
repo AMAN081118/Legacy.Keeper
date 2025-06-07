@@ -12,11 +12,11 @@ import { redirect } from "next/navigation"
 import { createServerClient } from "@/lib/supabase/server"
 
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     page?: string
     type?: string
     search?: string
-  }
+  }>
 }
 
 export default async function Page({ searchParams }: PageProps) {
