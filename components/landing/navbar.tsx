@@ -113,7 +113,7 @@ export function Navbar() {
         <Link href="/" className="text-sm font-medium text-gray-700 hover:text-blue-900">
           Login
         </Link>
-        <Link href="/auth/register">
+        <Link href="/">
           <Button className="bg-blue-900 hover:bg-blue-800 text-white rounded-md px-4 py-2 text-sm">Register</Button>
         </Link>
       </div>
@@ -131,8 +131,8 @@ export function Navbar() {
                 className="block cursor-pointer w-full text-left bg-transparent border-none p-0"
                 tabIndex={0}
                 onClick={() => {
-                  alert('Blogs card clicked');
-                  console.log('Blogs card clicked');
+                  // alert('Blogs card clicked');
+                  // console.log('Blogs card clicked');
                   setResourcesOpen(false);
                   router.push('/landing/resources/blogs');
                 }}
@@ -157,8 +157,8 @@ export function Navbar() {
                 className="block cursor-pointer w-full text-left bg-transparent border-none p-0"
                 tabIndex={0}
                 onClick={() => {
-                  alert('Help Guides card clicked');
-                  console.log('Help Guides card clicked');
+                  // alert('Help Guides card clicked');
+                  // console.log('Help Guides card clicked');
                   setResourcesOpen(false);
                   router.push('/landing/resources/guides');
                 }}
@@ -182,8 +182,8 @@ export function Navbar() {
                 className="block cursor-pointer w-full text-left bg-transparent border-none p-0"
                 tabIndex={0}
                 onClick={() => {
-                  alert('Video Library card clicked');
-                  console.log('Video Library card clicked');
+                  // alert('Video Library card clicked');
+                  // console.log('Video Library card clicked');
                   setResourcesOpen(false);
                   router.push('/landing/resources/videos');
                 }}
