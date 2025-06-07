@@ -7,7 +7,12 @@ import { TopBar } from "@/components/dashboard/top-bar";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { RoleProvider } from "@/components/dashboard/role-context";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
+export const dynamic = 'force-dynamic'
+
+// export const dynamic = 'force-dynamic'
 // Loading component for main content
 function MainContentSkeleton() {
   return (

@@ -2,6 +2,8 @@ import { cookies } from "next/headers"
 import { createServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase/database.types"
 
+export const dynamic = 'force-dynamic'
+
 export async function getUserRoles(userId: string): Promise<string[]> {
   const supabase = createServerClient()
   // Join user_roles and roles to get role names

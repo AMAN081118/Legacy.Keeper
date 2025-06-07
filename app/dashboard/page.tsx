@@ -13,6 +13,9 @@ import TrusteeRequests from "@/components/dashboard/trustee-requests"
 import { cookies } from "next/headers"
 import PermissionRequiredClientWrapper from "@/components/dashboard/permission-required-client-wrapper"
 
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic'
+
 // Separate components for parallel loading
 async function DashboardData({ userId }: { userId: string }) {
   let debugInfo = "";

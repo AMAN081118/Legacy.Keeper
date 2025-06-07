@@ -1,3 +1,6 @@
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic'
+
 import type { Metadata } from "next"
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
@@ -11,7 +14,8 @@ export const metadata: Metadata = {
 }
 
 export default async function DigitalAccountsPage() {
-  const supabase = createServerComponentClient({ cookies })
+  const cookieStore = cookies()
+  const supabase = createServerComponentClient({ cookies: () => cookieStore })
 
   const {
     data: { session },

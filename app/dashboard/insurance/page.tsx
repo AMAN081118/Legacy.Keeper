@@ -1,3 +1,6 @@
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic'
+
 import { Suspense } from "react"
 import { InsuranceHeader } from "@/components/insurance/insurance-header"
 import { InsuranceTabs } from "@/components/insurance/insurance-tabs"
@@ -9,8 +12,11 @@ import { redirect } from "next/navigation"
 import { createServerClient } from "@/lib/supabase/server"
 
 interface PageProps {
-  params: Promise<{ [key: string]: string }>
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+  searchParams: {
+    page?: string
+    type?: string
+    search?: string
+  }
 }
 
 export default async function Page({ searchParams }: PageProps) {

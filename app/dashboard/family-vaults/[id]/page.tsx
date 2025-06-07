@@ -1,12 +1,14 @@
+import { cookies } from "next/headers"
+import { createServerClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 import { getFamilyMember, getFamilyDocuments } from "@/app/actions/family-vaults"
 import { FamilyMemberDetailClient } from "@/components/family-vaults/family-member-detail-client"
-import { notFound } from "next/navigation"
-import { createServerClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
+
+export const dynamic = 'force-dynamic'
 
 interface PageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{ [key: string]: string }>
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 

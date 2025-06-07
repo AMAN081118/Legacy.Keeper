@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createServerClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
+
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic'
 
 /**
  * API endpoint to fix missing user profiles for existing users
@@ -8,6 +12,7 @@ import { createServerClient } from "@/lib/supabase/server"
  */
 export async function POST(request: Request) {
   try {
+    const cookieStore = cookies()
     const supabase = createServerClient()
     const adminClient = createAdminClient()
 

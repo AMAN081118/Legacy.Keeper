@@ -1,3 +1,6 @@
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from "next/server"
 import { getTrusteeOnboardingDetailsFromSession } from "@/app/actions/trustees"
 

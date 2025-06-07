@@ -3,8 +3,12 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getCurrentRoleFromSession } from "@/app/actions/user-roles";
 
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic'
+
 export default async function UserRolesPage() {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = cookies()
+  const supabase = createServerComponentClient({ cookies: () => cookieStore })
 
   const {
     data: { session },

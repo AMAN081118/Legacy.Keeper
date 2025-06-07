@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
+
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   console.log("[Update Status] API route hit")
@@ -17,6 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 })
     }
 
+    const cookieStore = cookies()
     const supabase = createServerClient()
 
     // Get current user session for debugging

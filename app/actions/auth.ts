@@ -4,6 +4,8 @@ import { createClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
+export const dynamic = 'force-dynamic'
+
 export async function registerUser(prevState: { error: string | null }, formData: FormData) {
   try {
     // Get form data

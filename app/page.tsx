@@ -1,13 +1,34 @@
 "use client"
 
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RegistrationForm } from "@/components/registration-form"
 import { LoginForm } from "@/components/login-form"
 import Image from "next/image"
 
+export const dynamic = 'force-dynamic'
+
 export default function Home() {
+  const router = useRouter()
+  const supabase = createClientComponentClient()
   const [tab, setTab] = useState("register")
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        router.push("/dashboard")
+      } else {
+        router.push("/landing")
+      }
+    }
+
+    checkUser()
+  }, [router, supabase])
+
   return (
     <main className="flex min-h-screen flex-col md:flex-row">
       {/* Left side with PNG image */}

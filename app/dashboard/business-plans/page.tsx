@@ -7,6 +7,9 @@ import { cookies } from "next/headers"
 import { getCurrentRoleFromSession } from "@/app/actions/user-roles"
 import { redirect } from "next/navigation"
 
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic'
+
 export default async function BusinessPlansPage() {
   // Ensure storage bucket exists
   await setupStorage()

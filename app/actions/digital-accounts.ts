@@ -5,6 +5,8 @@ import { cookies } from "next/headers"
 import { v4 as uuidv4 } from "uuid"
 import { revalidatePath } from "next/cache"
 
+
+
 // Function to ensure the digital-accounts bucket exists
 async function ensureDigitalAccountsBucket() {
   const supabase = createServerActionClient({ cookies })

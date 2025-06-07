@@ -8,72 +8,35 @@ import type { DepositInvestment } from "@/lib/supabase/database.types"
 export async function getDepositsInvestments(userId: string) {
   try {
     const supabase = createServerClient()
-
-    const { data: session } = await supabase.auth.getSession()
-    if (!session.session?.user) {
-      return { success: false, error: "Not authenticated" }
-    }
-
-    const userId = session.session.user.id
-
     const { data, error } = await supabase
       .from("deposits_investments")
       .select("*")
       .eq("user_id", userId)
-      .order("date", { ascending: false })
+      .order("created_at", { ascending: false })
 
-    if (error) {
-      console.error("Error fetching deposits and investments:", error)
-      return { success: false, error: error.message }
-    }
-
+    if (error) throw error
     return { success: true, data }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching deposits and investments:", error)
-    return { success: false, error: error.message }
+    return { success: false, error: "Failed to fetch deposits and investments" }
   }
 }
 
 export async function getDepositsInvestmentsStats() {
-  const supabase = createServerClient()
+  try {
+    const supabase = createServerClient()
+    const { data, error } = await supabase
+      .from("deposits_investments")
+      .select("amount")
+      .not("amount", "is", null)
 
-  const { data: session } = await supabase.auth.getSession()
-  if (!session.session?.user) {
-    return { success: false, error: "Not authenticated" }
-  }
+    if (error) throw error
 
-  const userId = session.session.user.id
-
-  // Get total amount invested
-  const { data: totalData, error: totalError } = await supabase
-    .from("deposits_investments")
-    .select("amount")
-    .eq("user_id", userId)
-
-  if (totalError) {
-    console.error("Error fetching total amount:", totalError)
-    return { success: false, error: totalError.message }
-  }
-
-  const totalAmount = totalData.reduce((sum, item) => sum + Number(item.amount), 0)
-
-  // Get count of investments
-  const { count, error: countError } = await supabase
-    .from("deposits_investments")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId)
-
-  if (countError) {
-    console.error("Error fetching count:", countError)
-    return { success: false, error: countError.message }
-  }
-
-  return {
-    success: true,
-    data: {
-      totalAmount,
-      count: count || 0,
-    },
+    const totalAmount = data.reduce((sum, item) => sum + (item.amount || 0), 0)
+    return { success: true, data: { totalAmount, count: data.length } }
+  } catch (error) {
+    console.error("Error fetching deposits and investments stats:", error)
+    return { success: false, error: "Failed to fetch stats" }
   }
 }
 

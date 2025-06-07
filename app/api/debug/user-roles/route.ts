@@ -1,71 +1,31 @@
 import { NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
+
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
     const supabase = createServerClient()
+    const { data: session } = await supabase.auth.getSession()
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    if (!session.session?.user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    // Get user roles
-    const { data: userRoles, error: userRolesError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', user.id)
+    const { data: roles, error } = await supabase
+      .from("user_roles")
+      .select("*")
+      .eq("user_id", session.session.user.id)
 
-    // Get all roles
-    const { data: allRoles, error: allRolesError } = await supabase
-      .from('roles')
-      .select('*')
-
-    // Get users table data for related users
-    const relatedUserIds = userRoles?.map(ur => ur.related_user_id).filter(Boolean) || []
-    let relatedUsers: { id: string; email: string; role: string }[] = []
-    if (relatedUserIds.length > 0) {
-      const { data: relatedUsersData, error: relatedUsersError } = await supabase
-        .from('user_roles')
-        .select('id, name, email')
-        .eq('user_id', user.id)
-
-      if (relatedUsersError) {
-        return NextResponse.json({ error: relatedUsersError.message }, { status: 500 })
-      }
-
-      relatedUsers = (relatedUsersData || []).map(user => ({
-        id: user.id,
-        email: user.email,
-        role: user.name // Using name as role since that's what we selected
-      }))
+    if (error) {
+      console.error("Error fetching user roles:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Get trustees where user is the trustee
-    const { data: trusteeData, error: trusteeError } = await supabase
-      .from('trustees')
-      .select('*')
-      .eq('email', user.email)
-
-    return NextResponse.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.name
-      },
-      userRoles: userRoles || [],
-      allRoles: allRoles || [],
-      relatedUsers: relatedUsers,
-      trusteeData: trusteeData || [],
-      errors: {
-        userRolesError,
-        allRolesError,
-        trusteeError
-      }
-    })
+    return NextResponse.json({ roles })
   } catch (error) {
-    console.error("Debug API error:", error)
+    console.error("Error in debug user roles route:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

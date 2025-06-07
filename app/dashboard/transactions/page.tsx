@@ -1,3 +1,6 @@
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic'
+
 import { createServerClient } from "@/lib/supabase/server"
 import { TransactionsHeader } from "@/components/transactions/transactions-header"
 import { TransactionsTabs } from "@/components/transactions/transactions-tabs"

@@ -5,6 +5,10 @@ import { Pencil, Check, X } from "lucide-react"
 import { FileUpload } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { useRouter } from "next/navigation"
+
+export const dynamic = 'force-dynamic'
 
 const editableFields = [
   { key: "name", label: "Name", type: "text" },

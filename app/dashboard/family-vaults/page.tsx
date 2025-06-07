@@ -1,3 +1,6 @@
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic'
+
 import { getFamilyMembers } from "@/app/actions/family-vaults"
 import { FamilyVaultsClient } from "@/components/family-vaults/family-vaults-client"
 import { createServerClient } from "@/lib/supabase/server"

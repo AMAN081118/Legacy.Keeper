@@ -10,6 +10,9 @@ import { EditHealthConditionModal } from "@/components/health-records/edit-healt
 import { ProfileEditButton } from "@/components/health-records/profile-edit-button"
 import { HealthConditionActions } from "@/components/health-records/health-condition-actions"
 
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic'
+
 interface PageProps {
   params: Promise<{ id: string }>
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -19,7 +22,8 @@ export default async function Page({ params, searchParams }: PageProps) {
   const { id } = await params
   await searchParams // We need to await this even if we don't use it
 
-  const supabase = createServerComponentClient({ cookies })
+  const cookieStore = cookies()
+  const supabase = createServerComponentClient({ cookies: () => cookieStore })
 
   // Fetch the health record
   const { data: record, error } = await supabase.from("health_records").select("*").eq("id", id).single()

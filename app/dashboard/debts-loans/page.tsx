@@ -6,6 +6,8 @@ import DebtsLoansHeaderClient from "@/components/debts-loans/debts-loans-header-
 import { cookies } from "next/headers"
 import { getCurrentRoleFromSession } from "@/app/actions/user-roles"
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: "Debts & Loans | Legacy Keeper",
   description: "Manage your debts and loans",

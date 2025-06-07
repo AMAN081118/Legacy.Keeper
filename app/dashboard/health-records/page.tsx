@@ -1,3 +1,6 @@
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic'
+
 import { Suspense } from "react"
 import { getHealthRecords } from "@/app/actions/health-records"
 import { HealthRecordsHeader } from "@/components/health-records/health-records-header"
@@ -6,8 +9,6 @@ import { EmptyState } from "@/components/health-records/empty-state"
 import { cookies } from "next/headers"
 import { getCurrentRoleFromSession } from "@/app/actions/user-roles"
 import { redirect } from "next/navigation"
-
-export const dynamic = "force-dynamic"
 
 export default async function HealthRecordsPage() {
   const cookieStore = await cookies()

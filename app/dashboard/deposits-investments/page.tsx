@@ -6,9 +6,12 @@ import { getDepositsInvestments, getDepositsInvestmentsStats } from "@/app/actio
 import DepositsInvestmentsClient from "@/components/deposits-investments/deposits-investments-client";
 import type { DepositInvestment } from "@/lib/supabase/database.types";
 
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic'
+
 export default async function DepositsInvestmentsPage() {
-  const supabase = createServerComponentClient({ cookies });
-  const cookieStore = await cookies();
+  const cookieStore = cookies()
+  const supabase = createServerComponentClient({ cookies: () => cookieStore })
 
   const {
     data: { session },
