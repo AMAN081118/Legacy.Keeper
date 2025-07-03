@@ -1,106 +1,139 @@
 export interface BlogPost {
-  id: number
-  title: string
-  excerpt: string
-  category: "finance" | "insurance" | "family" | "growth"
-  date: string
-  image: string
-  layout: "featured" | "regular"
+  id: string;
+  title: string;
+  excerpt?: string;
+  description?: string;
+  content?: string;
+  author?: string;
+  category: string;
+  date?: string;
+  image?: string;
+  layout?: "featured" | "regular";
+  tags?: string[];
+  status?: string;
+  updated_at?: string;
+  slug?: string;
 }
 
-export const blogPosts: BlogPost[] = [
-  {
-    id: 1,
-    title: "5 Smart Budgeting Tips for Families to Save More Money",
-    excerpt:
-      "Managing family finances can be challenging, but with the right budgeting strategies, you can save more and secure a better future. Here are five practical tips to help your family stay on track financially.",
-    category: "finance",
-    date: "25 July 2024",
-    image: "/budgeting-tips.jpg",
-    layout: "featured",
-  },
-  {
-    id: 2,
-    title: "Investing for Beginners",
-    excerpt:
-      "Lorem ipsum dolor sit amet consectetur. Amet id diam quis dictum quis eget malesuada tellus. Viverra sagittis consectetur sed at. Ut nulla.",
-    category: "family",
-    date: "20 July 2024",
-    image: "/investing-beginners.jpg",
-    layout: "regular",
-  },
-  {
-    id: 3,
-    title: "Home Finance Guide",
-    excerpt:
-      "Lorem ipsum dolor sit amet consectetur. Amet id diam quis dictum quis eget malesuada tellus. Viverra sagittis consectetur sed at. Ut nulla.",
-    category: "family",
-    date: "25 July 2024",
-    image: "/home-finance.jpg",
-    layout: "regular",
-  },
-  {
-    id: 4,
-    title: "Car Loans & Auto Expenses",
-    excerpt:
-      "Lorem ipsum dolor sit amet consectetur. Amet id diam quis dictum quis eget malesuada tellus. Viverra sagittis consectetur sed at. Ut nulla.",
-    category: "family",
-    date: "20 July 2024",
-    image: "/car-loans.jpg",
-    layout: "regular",
-  },
-  {
-    id: 5,
-    title: "How to Cut Monthly Expenses Without Sacrificing Comfort",
-    excerpt:
-      "Managing family finances can be challenging, but with the right budgeting strategies, you can save more and secure a better future. Here are five practical tips to help your family stay on track financially.",
-    category: "finance",
-    date: "22 July 2024",
-    image: "/cut-expenses.jpg",
-    layout: "featured",
-  },
-  {
-    id: 6,
-    title: "Frugal Living",
-    excerpt:
-      "Lorem ipsum dolor sit amet consectetur. Amet id diam quis dictum quis eget malesuada tellus. Viverra sagittis consectetur sed at. Ut nulla.",
-    category: "family",
-    date: "20 July 2024",
-    image: "/frugal-living.jpg",
-    layout: "regular",
-  },
-  {
-    id: 7,
-    title: "10 Practical Ways to Save Money on Groceries",
-    excerpt:
-      "Lorem ipsum dolor sit amet consectetur. Amet id diam quis dictum quis eget malesuada tellus. Viverra sagittis consectetur sed at. Ut nulla.",
-    category: "family",
-    date: "25 July 2024",
-    image: "/save-groceries.jpg",
-    layout: "regular",
-  },
-  {
-    id: 8,
-    title: "Stocks vs. Real Estate",
-    excerpt:
-      "Lorem ipsum dolor sit amet consectetur. Amet id diam quis dictum quis eget malesuada tellus. Viverra sagittis consectetur sed at. Ut nulla.",
-    category: "family",
-    date: "20 July 2024",
-    image: "/stocks-realestate.jpg",
-    layout: "regular",
-  },
-  {
-    id: 9,
-    title: "Best Financial Planning Tips for Stay-at-Home Parents",
-    excerpt:
-      "Managing family finances can be challenging, but with the right budgeting strategies, you can save more and secure a better future. Here are five practical tips to help your family stay on track financially.",
-    category: "finance",
-    date: "22 July 2024",
-    image: "/stay-home-parents.jpg",
-    layout: "featured",
-  },
-]
+// Cache for blog posts to avoid repeated API calls
+let blogPostsCache: BlogPost[] | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-export function getBlogPost(id: number) {
-  return blogPosts.find((post) => post.id === id)
+async function fetchBlogPosts(): Promise<BlogPost[]> {
+  try {
+    // Use absolute URL for server-side rendering
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const response = await fetch(`${baseUrl}/api/blogs`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch blogs: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("API Response:", data);
+
+    if (!data.blogs) {
+      return [];
+    }
+
+    // Map API blogs to BlogPost type with fallbacks
+    return data.blogs.map((blog: any) => ({
+      id: blog.id,
+      title: blog.title,
+      description: blog.description,
+      excerpt:
+        blog.description ||
+        blog.content?.slice(0, 120) ||
+        "No excerpt available.",
+      content: blog.content,
+      author: blog.author,
+      category: blog.category || "uncategorized",
+      date: blog.date ? new Date(blog.date).toLocaleDateString() : "",
+      image: blog.image || "/placeholder.svg",
+      layout: blog.layout || "regular",
+      tags: blog.tags,
+      slug: blog.slug,
+      status: blog.status,
+      updated_at: blog.updated_at,
+    }));
+  } catch (error) {
+    console.error("Error fetching blog posts:", error);
+    return [];
+  }
 }
+
+export async function getBlogPosts(): Promise<BlogPost[]> {
+  const now = Date.now();
+
+  // Return cached data if it's still valid
+  if (blogPostsCache && now - cacheTimestamp < CACHE_DURATION) {
+    return blogPostsCache;
+  }
+
+  // Fetch fresh data
+  const posts = await fetchBlogPosts();
+
+  // Update cache
+  blogPostsCache = posts;
+  cacheTimestamp = now;
+
+  return posts;
+}
+
+export async function getBlogPost(id: string): Promise<BlogPost | undefined> {
+  // Validate UUID format (basic check)
+  if (!id || typeof id !== "string" || id.trim() === "") {
+    console.warn("Invalid blog post ID provided:", id);
+    return undefined;
+  }
+
+  try {
+    // Fetch individual blog post directly
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const response = await fetch(`${baseUrl}/api/blogs/${id.trim()}`);
+
+    if (!response.ok) {
+      console.error(`Failed to fetch blog post: ${response.status}`);
+      return undefined;
+    }
+
+    const data = await response.json();
+    console.log("Individual blog API Response:", data);
+
+    if (!data.blog) {
+      console.error("No blog data in response");
+      return undefined;
+    }
+
+    const blog = data.blog;
+
+    // Map API blog to BlogPost type with fallbacks
+    return {
+      id: blog.id,
+      title: blog.title,
+      description: blog.description,
+      excerpt:
+        blog.description ||
+        blog.content?.slice(0, 120) ||
+        "No excerpt available.",
+      content: blog.content,
+      author: blog.author,
+      category: blog.category || "uncategorized",
+      date: blog.date ? new Date(blog.date).toLocaleDateString() : "",
+      image: blog.image || "/placeholder.svg",
+      layout: blog.layout || "regular",
+      tags: blog.tags,
+      slug: blog.slug,
+      status: blog.status,
+      updated_at: blog.updated_at,
+    };
+  } catch (error) {
+    console.error("Error fetching individual blog post:", error);
+    return undefined;
+  }
+}
+
+// For backward compatibility, export an empty array as blogPosts
+// This maintains compatibility with existing code that might import blogPosts directly
+export const blogPosts: BlogPost[] = [];

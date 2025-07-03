@@ -1,39 +1,39 @@
-import { Footer } from "@/components/landing/footer"
-import { NewsletterSubscribe } from "@/components/landing/newsletter-subscribe"
-import { BlogPost } from "@/components/landing/blog-post"
-import { getBlogPost } from "@/lib/landing/blog-data"
-import { notFound } from "next/navigation"
-import { Metadata } from "next"
+import { Footer } from "@/components/landing/footer";
+import { NewsletterSubscribe } from "@/components/landing/newsletter-subscribe";
+import { BlogPost } from "@/components/landing/blog-post";
+import { getBlogPost } from "@/lib/landing/blog-data";
+import { notFound } from "next/navigation";
+import { Metadata } from "next";
 
 type Props = {
-  params: Promise<{ id: string }>
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
-}
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const resolvedParams = await params
-  const id = Number.parseInt(resolvedParams.id)
-  const post = getBlogPost(id)
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
+  const post = await getBlogPost(id);
 
   if (!post) {
     return {
       title: "Blog Post Not Found",
-    }
+    };
   }
 
   return {
     title: post.title,
-    description: post.excerpt,
-  }
+    description: post.excerpt || post.description,
+  };
 }
 
 export default async function BlogPostPage({ params }: Props) {
-  const resolvedParams = await params
-  const id = Number.parseInt(resolvedParams.id)
-  const post = getBlogPost(id)
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
+  const post = await getBlogPost(id);
 
   if (!post) {
-    notFound()
+    notFound();
   }
 
   return (
@@ -42,5 +42,5 @@ export default async function BlogPostPage({ params }: Props) {
       <NewsletterSubscribe />
       <Footer />
     </main>
-  )
+  );
 }
