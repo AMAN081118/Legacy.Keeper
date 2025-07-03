@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { PricingPlan } from "@/types/pricing";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 declare global {
   interface Window {
@@ -21,6 +22,9 @@ export function PricingPlansNew() {
   const [hours, setHours] = useState(9);
   const [minutes, setMinutes] = useState(8);
   const [seconds, setSeconds] = useState(5);
+
+  const { profile: userProfile } = useUserProfile();
+  const userSubscribedPlan = userProfile?.subscription_status;
 
   // Fetch pricing plans from API
   useEffect(() => {
@@ -253,8 +257,11 @@ export function PricingPlansNew() {
                 <Button
                   className={`w-full ${getButtonColorClass(plan.button_color)}`}
                   onClick={() => handleSubscribe(plan)}
+                  disabled={userSubscribedPlan === plan.name}
                 >
-                  {plan.button_text}
+                  {userSubscribedPlan === plan.name
+                    ? "Subscribed"
+                    : plan.button_text}
                 </Button>
               </div>
             </div>

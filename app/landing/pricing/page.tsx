@@ -12,7 +12,7 @@ export const metadata = {
 export default function PricingPage() {
   return (
     <main className="min-h-screen">
-      <PricingPlans />
+      {/* <PricingPlans /> */}
       <PricingPlansNew />
       <PaymentFeatures />
       <PricingFAQ />
